@@ -1,0 +1,626 @@
+"ID_SERIE";"ID_WIKIDATA";"ID_IMDB";"ID_WIKIDATA_SERIE";"ID_TMDB_WIKIDATA";"TITLE";"ADULT";"ID_SERIE_ERASE_WIKIDATA_ID"
+"121";"Q39243428";"tt0056751";"0";;"Doctor Who";"0";NULL
+"492";"Q1168760";"tt0066722";"0";;"Upstairs, Downstairs";"0";NULL
+"1007";"Q868399";"tt0078635";"0";;"Mrs. Columbo";"0";NULL
+"1286";"Q4176031";"tt0259128";"0";;"BattleBots";"0";"62959"
+"1333";"Q5688921";"tt0198138";"0";;"He Said, She Said";"0";NULL
+"3022";"Q304290";"tt0101188";"0";;"Rugrats";"0";NULL
+"3026";"Q1619426";"tt0144065";"0";;"Richie Rich";"0";NULL
+"3107";"Q5617763";"tt0177444";"0";;"Gullah Gullah Island";"0";NULL
+"3353";"Q3284363";"tt0202745";"0";;"Odd Man Out";"0";NULL
+"3434";"Q3957905";"tt0462134";"0";;"Serious";"0";NULL
+"3836";"Q4812547";"tt0090523";"0";;"At the Movies";"0";NULL
+"3870";"Q5296720";"tt0073985";"0";;"Donny & Marie";"0";NULL
+"3887";"Q7751801";"tt0384750";"0";;"The Mitchell and Webb Situation";"0";NULL
+"3988";"Q1248917";"tt1077065";"0";;"Sin tetas no hay paraíso";"0";NULL
+"4136";"Q4838753";"tt0162786";"0";;"Bachelor Father";"0";NULL
+"4192";"Q7067212";"tt0194597";"0";;"Blockbusters";"0";NULL
+"4618";"Q584745";"tt0801425";"0";;"Day Break";"0";NULL
+"5478";"Q5057729";"tt1249208";"0";;"Celebrity Family Feud";"0";"82108"
+"5585";"Q6133269";"tt1158105";"0";;"My Sassy Girl";"0";NULL
+"6031";"Q8000736";"tt0108990";"0";;"Wild Oats";"0";NULL
+"6039";"Q7832449";"tt3276004";"0";;"Traffic Cops";"0";"81440"
+"6054";"Q5232888";"tt0493188";"0";;"Where the Legend Begins";"0";NULL
+"6094";"Q996028";"tt13031912";"0";;"The Cave of the Golden Rose";"0";NULL
+"6242";"Q3471871";"tt1985904";"0";;"Ultraman Neos";"0";NULL
+"6583";"Q4185629";"tt7052932";"0";;"The Unbeatables";"0";NULL
+"6739";"Q1216567";"tt0166923";"0";;"The Moment of Truth";"0";NULL
+"7008";"Q1182856";"tt1118542";"0";;"Security Police";"0";NULL
+"7712";"Q132176500";"tt1286757";"0";;"Find My Family";"0";NULL
+"7858";"Q7751920";"tt0243073";"0";;"The Mole";"0";NULL
+"8063";"Q7776140";"tt0184037";"0";;"The World of Lee Evans";"0";NULL
+"8455";"Q704055";"tt9340012";"0";;"Brown Sugar Macchiato";"0";NULL
+"9281";"Q5089958";"tt0094432";"0";;"Chelmsford 123";"0";NULL
+"9527";"Q7278888";"tt0165439";"0";;"Race Around the World";"0";NULL
+"9787";"Q7757984";"tt0103515";"0";;"The Powers That Be";"0";NULL
+"9926";"Q3895807";"tt0071056";"0";;"Sons and Daughters";"0";NULL
+"9962";"Q7814726";"tt0108965";"0";;"Tom";"0";NULL
+"10155";"Q3284340";"tt0112118";"0";"r253463-partners";"Partners";"0";NULL
+"10367";"Q7844657";"tt0259161";"0";;"Trivial Pursuit";"0";NULL
+"10370";"Q1194353";"tt0085031";"0";;"The Hitchhiker";"0";NULL
+"10399";"Q5380473";"tt0482346";"0";;"ET Entertainment Tonight";"0";NULL
+"10424";"Q3210494";"tt0092480";"0";;"Werewolf";"0";NULL
+"10527";"Q6369456";"tt0072525";"0";;"Karen";"0";NULL
+"10757";"Q7380137";"tt0264994";"0";;"Runway";"0";NULL
+"10798";"Q3829022";"tt0075484";"0";;"Blansky's Beauties";"0";NULL
+"11063";"Q137638690";"tt0286401";"0";;"WWF Jakked/Metal";"0";NULL
+"11328";"Q1421795";"tt0083430";"0";;"The Incredible Hulk";"0";NULL
+"11385";"Q5207841";"tt0118295";"0";;"Dad";"0";NULL
+"11704";"Q7712884";"tt1292218";"0";;"The Agenda";"0";NULL
+"11866";"Q492015";"tt5985540";"0";;"Eighteen, Twenty-Nine";"0";NULL
+"11976";"Q1099587";"tt0433298";"0";;"Jamie and the Magic Torch";"0";NULL
+"12067";"Q7018503";"tt0106083";"0";;"Newman and Baddiel in Pieces";"0";NULL
+"12341";"Q135641316";"tt0450911";"0";;"E's Otherwise";"0";NULL
+"12341";"Q1273069";"tt0450911";"0";;"E's Otherwise";"0";NULL
+"12687";"Q5515929";"tt0224878";"0";;"Gabriel y Gabriela";"0";NULL
+"12784";"Q3234288";"tt1086191";"0";;"Outnumbered";"0";NULL
+"13179";"Q3139068";"tt0435926";"0";;"The Slave Isaura";"0";NULL
+"13296";"Q4333771";"tt1065309";"0";;"Oliver Twist";"0";NULL
+"13429";"Q7193330";"tt0281477";"0";;"Pigeon Street";"0";NULL
+"13517";"Q2750348";"tt0299295";"0";;"Fireman";"0";NULL
+"13685";"Q101242965";"tt0296351";"0";;"Alpen Rose";"0";NULL
+"13771";"Q7730492";"tt0163933";"0";;"The Doctors";"0";NULL
+"13834";"Q166354";"tt0061289";"0";;"Space Patrol";"0";NULL
+"13909";"Q3683756";"tt0050006";"0";;"Colt .45";"0";NULL
+"14470";"Q7753541";"tt0244914";"0";;"The New Casper Cartoon Show";"0";NULL
+"14522";"Q17036200";"tt0086819";"0";;"Tripper's Day";"0";NULL
+"14570";"Q5824888";"tt0266135";"0";;"El Engaño";"0";NULL
+"14616";"Q651718";"tt0284335";"0";;"My Parents Are Aliens";"0";NULL
+"14963";"Q7805211";"tt2391266";"0";;"Time Was";"0";NULL
+"15200";"Q15995141";"tt2872946";"0";;"House of Cosbys";"0";NULL
+"15307";"Q7738771";"tt0278220";"0";;"The Hanna-Barbera New Cartoon Series";"0";NULL
+"15394";"Q5047989";"tt0816371";"0";;"Casado con hijos";"0";NULL
+"15868";"Q7209426";"tt0299365";"450850";;"Police Call";"0";NULL
+"15961";"Q497048";"tt6201056";"0";;"The King and I";"0";NULL
+"16084";"Q7640880";"tt0118483";"0";;"Sunnyside Farm";"0";NULL
+"17911";"Q8031774";"tt11427166";"0";;"Wonder Wheels";"0";NULL
+"18051";"Q5320216";"tt0214342";"0";;"Déjame vivir";"0";NULL
+"19230";"Q7750727";"tt0283201";"0";;"The Mayfair Set";"0";NULL
+"19320";"Q7740816";"tt0149471";"0";;"The Human Animal";"0";NULL
+"21653";"Q3650809";"tt0249282";"0";;"Call Red";"0";NULL
+"21868";"Q3807018";"tt0047745";"0";;"The Jane Wyman Show";"0";NULL
+"22587";"Q16539360";"tt0096558";"0";;"Christine Cromwell";"0";NULL
+"23284";"Q20089819";"tt0163496";"0";;"Spy Trap";"0";NULL
+"23545";"Q98098241";"tt0369081";"0";;"Ask This Old House";"0";NULL
+"24119";"Q120207451";"tt0101131";"0";;"Lazarus & Dingwall";"0";NULL
+"24554";"Q30603685";"tt0120932";"0";;"Call Me Mister";"0";NULL
+"24694";"Q16994222";"tt0092372";"0";;"Home James!";"0";NULL
+"24721";"Q15039550";"tt0115130";"296552";;"The Challenge";"0";NULL
+"25290";"Q16993199";"tt0111988";"0";;"The Governor";"0";NULL
+"25407";"Q5175094";"tt0161137";"0";;"Costello";"0";NULL
+"25493";"Q7280008";"tt1346632";"0";;"The Biggest Loser";"0";NULL
+"25552";"Q4767136";"tt0075476";"0";;"Anna Karenina";"0";NULL
+"25714";"Q95151820";"tt0184916";"0";;"Stalky & Co";"0";NULL
+"26731";"Q123508356";"tt0133296";"0";;"Blind Men";"0";NULL
+"26775";"Q18353967";"tt1646039";"0";;"Escape";"0";NULL
+"27018";"Q97738256";"tt0145617";"0";;"The Last Salute";"0";NULL
+"27174";"Q18169835";"tt5419966";"0";;"Spring!";"0";NULL
+"27575";"Q3221319";"tt0047768";"0";;"Screen Director's Playhouse";"0";NULL
+"28228";"Q18162516";"tt0052523";"0";;"The Vital Spark";"0";NULL
+"28494";"Q112182695";"tt0105978";"0";;"Crime & Punishment";"0";NULL
+"28738";"Q7745505";"tt0162815";"0";;"The Larkins";"0";NULL
+"28887";"Q22236130";"tt1268141";"0";;"Farmer Wants a Wife";"0";NULL
+"29422";"Q96409531";"tt7374240";"0";;"The Other One";"0";NULL
+"30122";"Q7095936";"tt0260640";"0";;"Open Air";"0";NULL
+"30441";"Q7079005";"tt0061284";"0";;"Off to See the Wizard";"0";NULL
+"30470";"Q4929849";"tt0108710";"0";;"Blue Skies";"0";NULL
+"30672";"Q2854783";"tt0270149";"0";;"Musti";"0";NULL
+"30735";"Q485345";"tt3375828";"0";;"Dream";"0";NULL
+"30964";"Q7078971";"tt1474316";"0";;"Off the Hook";"0";NULL
+"31010";"Q512137";"tt0120756";"0";;"Moby Dick";"0";NULL
+"31216";"Q3988066";"tt0060002";"0";;"The Lone Ranger";"0";NULL
+"31585";"Q723";"tt1442065";"0";"r29988-rookie-blue";"Rookie Blue";"0";NULL
+"31776";"Q6659031";"tt1086541";"0";;"Living Britain";"0";NULL
+"32018";"Q9355128";"tt0204778";"0";;"Titch";"0";NULL
+"32043";"Q6126248";"tt11627878";"0";;"The Proud Twins";"0";NULL
+"32160";"Q128265";"tt0161175";"0";;"New Scotland Yard";"0";NULL
+"32780";"Q4847896";"tt1595336";"0";;"Vidas Robadas";"0";NULL
+"33006";"Q7762496";"tt1685460";"0";;"The Scheme";"0";NULL
+"33146";"Q5232559";"tt0210636";"0";;"David Copperfield";"0";NULL
+"33629";"Q9380347";"tt0208620";"0";;"Hope Island";"0";NULL
+"33692";"Q6125098";"tt0250872";"0";;"Jake & the Kid";"0";NULL
+"34118";"Q136330158";"tt0477535";"0";;"Samurai Gun";"0";NULL
+"34118";"Q825564";"tt0477535";"0";;"Samurai Gun";"0";NULL
+"34511";"Q7756311";"tt0050050";"0";;"The Pat Boone Chevy Showroom";"0";NULL
+"34866";"Q6929426";"tt0292129";"0";;"Mr. Majeika";"0";NULL
+"35367";"Q10868964";"tt6284108";"0";;"Men with No Shadows";"0";NULL
+"36154";"Q7997468";"tt1705096";"0";;"Who The (Bleep) Did I Marry?";"0";NULL
+"36497";"Q11126442";"tt0119706";"0";;"Mouri Motonari";"0";NULL
+"37113";"Q4050796";"tt1278280";"0";;"Tales of the Abyss";"0";NULL
+"37347";"Q511920";"tt0315689";"0";;"The Loss of Humanity";"0";NULL
+"39127";"Q20228663";"tt2263665";"0";;"Kontoret";"0";NULL
+"39266";"Q15697772";"tt0891831";"0";;"Mega Builders";"0";NULL
+"39390";"Q6087920";"tt2300165";"0";;"Iss Pyaar Ko Kya Naam Doon?";"0";NULL
+"39475";"Q5985374";"tt0302118";"0";;"Ice Warriors";"0";NULL
+"40076";"Q6444445";"tt1962939";"0";;"Kung Fu Dino Posse";"0";NULL
+"40483";"Q1211281";"tt0094423";"0";;"Die Bertinis";"0";NULL
+"40582";"Q1736769";"tt1352416";"0";;"Katrin und die Welt der Tiere";"0";NULL
+"41809";"Q7245132";"tt0229923";"0";;"Principessa";"0";NULL
+"41817";"Q1670351";"tt0066213";"0";;"Oberinspektor Marek";"0";NULL
+"41936";"Q5316950";"tt1719785";"0";;"Dussault Inc.";"0";NULL
+"42133";"Q832481";"tt0233096";"0";;"Quentin Durward";"0";NULL
+"42506";"Q107011746";"tt2131768";"0";;"The Mystic Archives of Dantalian";"0";NULL
+"42961";"Q2494638";"tt5991582";"0";;"Heading to the Ground";"0";NULL
+"44038";"Q1060695";"tt17422266";"0";;"Ginga e Kickoff!!";"0";NULL
+"44187";"Q3822755";"tt0108715";"0";;"Burke's Law";"0";NULL
+"45207";"Q1132147";"tt14895298";"0";;"Hime Chen! Otogi Chikku Idol Lilpri";"0";NULL
+"45719";"Q60792241";"tt0120958";"0";;"For the Record";"0";NULL
+"45999";"Q109941378";"tt6608398";"0";;"Yumeiro Patissiere";"0";NULL
+"46373";"Q130476868";"tt1246990";"0";;"Aqua Age";"0";NULL
+"46584";"Q6797809";"tt8000114";"0";;"Love Marriage";"0";NULL
+"46622";"Q16839457";"tt1202623";"0";;"Futz";"0";NULL
+"47510";"Q932874";"tt0095388";"0";;"Jack the Ripper";"0";NULL
+"47557";"Q48699692";"tt0318469";"0";;"Murder";"0";NULL
+"48361";"Q6731134";"tt6459248";"0";;"Strange Tales of Liao Zhai";"0";NULL
+"49009";"Q13100312";"tt2712740";"0";"r1549838901-the-goldbergs";"The Goldbergs";"0";NULL
+"49122";"Q6030123";"tt0484514";"0";;"Firat";"0";NULL
+"49834";"Q12810423";"tt13291348";"0";;"Koyu Kırmızı";"0";NULL
+"49891";"Q6076739";"tt0781874";"0";;"Gönül";"0";NULL
+"51018";"Q109954829";"tt20827706";"0";;"Kings";"0";NULL
+"51242";"Q12307955";"tt0352049";"0";;"Deadline";"0";NULL
+"52168";"Q109363010";"tt0380888";"0";;"Είσαι Πολύ Αλήτης Τελικά";"0";NULL
+"52722";"Q11110268";"tt8834682";"0";;"Secret Campus";"0";NULL
+"52882";"Q11596006";"tt2041944";"0";;"Himitsu Chouhouin Erika";"0";NULL
+"53879";"Q113860634";"tt0327370";"0";;"Τι συμβαίνει με το Χάρη";"0";NULL
+"53906";"Q85972542";"tt7417844";"0";;"Kızlar Sınıfı";"0";NULL
+"54557";"Q17031042";"tt0169507";"0";;"Villains";"0";NULL
+"54607";"Q11659478";"tt1854064";"0";;"Divorce Lawyer";"0";NULL
+"54889";"Q31890955";"tt19387830";"0";;"Minuten";"0";NULL
+"55553";"Q4507498";"tt5442458";"0";;"The Voice Ahla Sawt";"0";NULL
+"57243";"Q39243484";"tt0436992";"0";;"Doctor Who";"0";NULL
+"57773";"Q17021423";"tt0405597";"0";;"Storyboard";"0";NULL
+"57818";"Q5970803";"tt2772760";"0";;"Las Vega's";"0";"97937"
+"58111";"Q15072814";"tt3155320";"0";"r262965-extant";"Extant";"0";NULL
+"58710";"Q3289749";"tt0247859";"0";;"Little Angel Face";"0";NULL
+"58968";"Q8000653";"tt2341819";"0";;"Wild Grinders";"0";NULL
+"59244";"Q3072179";"tt1607173";"227599";;"Monsters Resurrected";"0";NULL
+"59337";"Q7620448";"tt0477540";"0";;"Storybook International";"0";NULL
+"59511";"Q16995200";"tt2770276";"0";;"It's Kevin";"0";NULL
+"59798";"Q6684244";"tt6268144";"0";;"Definitely Neighbors";"0";NULL
+"59800";"Q5837548";"tt2671418";"0";;"Ta Soraya";"0";NULL
+"59861";"Q6838112";"tt6280708";"0";;"Secret Agent Miss Oh";"0";NULL
+"59920";"Q3230761";"tt3124500";"273325";;"Sesame Street: Bert and Ernie's Great Adventures";"0";NULL
+"61136";"Q15051771";"tt3350766";"0";;"Bel Ami";"0";NULL
+"61158";"Q17254818";"tt4135176";"0";;"The Three Musketeers";"0";NULL
+"61245";"Q16257677";"tt3098842";"0";;"Jamaica Inn";"0";NULL
+"61478";"Q118383790";"tt2113599";"0";;"Africa's Deadliest";"0";NULL
+"61831";"Q16992630";"tt3159736";"0";;"The Game";"0";NULL
+"62122";"Q20526844";"tt3674454";"0";;"Black-and-White World";"0";NULL
+"62142";"Q17299853";"tt3230780";"0";;"The Returned";"0";NULL
+"62284";"Q15741053";"tt2188931";"0";;"Those Who Kill";"0";NULL
+"62302";"Q5981196";"tt1180522";"0";;"The Simulators";"0";NULL
+"67506";"Q25544418";"tt6428698";"0";"544418";"SOTUS";"0";NULL
+"68949";"Q9032185";"tt0196270";"0";;"My family is a draw";"0";NULL
+"69045";"Q27983316";"tt6424812";"0";;"General and I";"0";NULL
+"70094";"Q123046764";"tt6289564";"0";;"Far Away Love";"0";NULL
+"70149";"Q113040683";"tt5876226";"0";;"Die Boekklub";"0";NULL
+"70923";"Q137799231";"tt11605032";"0";;"Rakshasa Street";"0";NULL
+"73625";"Q30941339";"tt6659882";"0";;"Nothing Gold Can Stay";"0";NULL
+"74237";"Q48896762";"tt6971052";"0";;"Rakshasa Street";"0";NULL
+"74274";"Q26944205";"tt7172670";"0";;"Azja Express";"0";NULL
+"75728";"Q56063035";"tt6261554";"0";;"I'm a Celebrity... Extra Camp";"0";"27097"
+"78199";"Q15897765";"tt3803310";"0";;"The Bronze Teeth";"0";NULL
+"78986";"Q48916168";"tt8076822";"0";;"My Huckleberry Friends";"0";NULL
+"80470";"Q28415916";"tt10282720";"0";;"Succession War";"0";NULL
+"80653";"Q55707648";"tt8242348";"0";;"The Mask";"0";NULL
+"80715";"Q5452076";"tt8461250";"0";;"Firing Line with Margaret Hoover";"0";"10631"
+"81185";"Q55621888";"tt11428176";"0";;"The Legend of Kaifeng";"0";NULL
+"81346";"Q25463401";"tt8470384";"0";;"Regret";"0";NULL
+"82660";"Q48897508";"tt9085276";"0";;"Entrepreneurial Age";"0";NULL
+"82804";"Q48905071";"tt7073222";"0";;"What She Put on the Table";"0";NULL
+"83186";"Q57389463";"tt9066016";"0";;"Fitness";"0";NULL
+"85664";"Q15903526";"tt4772556";"0";;"The Orphan of Zhao";"0";NULL
+"85771";"Q21693720";"tt4250064";"0";;"Heel Holland Bakt";"0";"156792"
+"85942";"Q136929977";"tt11405390";"0";;"Darwin's Game";"0";NULL
+"85989";"Q60995002";"tt9587616";"0";;"Spy Hunter";"0";NULL
+"86226";"Q4253907";"tt0449500";"0";;"Ландыш серебристый 2";"0";NULL
+"86488";"Q108405252";"tt4311196";"0";;"Death of a Girl";"0";NULL
+"86695";"Q123180418";"tt10272610";"0";;"Inspector Vedas";"0";NULL
+"87318";"Q55696461";"tt7564330";"0";;"My Classmate from Far Far Away";"0";NULL
+"87695";"Q55718358";"tt12257736";"0";;"Bluetick";"0";NULL
+"88067";"Q30949688";"tt11428118";"0";;"The Brightest Star in the Sky";"0";NULL
+"88344";"Q62058792";"tt5676984";"0";;"Chong Er's Preach";"0";NULL
+"88424";"Q22078650";"tt10166728";"0";;"Investiture of the Gods";"0";NULL
+"88538";"Q65120614";"tt11492192";"0";;"Aussie Lobster Men";"0";NULL
+"88862";"Q3475559";"tt0166933";"0";"88862";"Schulmeister, l'espion de l'Empereur";"0";NULL
+"89268";"Q17007304";"tt10314752";"0";;"Life Revelation";"0";NULL
+"89378";"Q21160132";"tt4362346";"0";;"Private Investigator (P.I.)";"0";NULL
+"89423";"Q63619459";"tt10949694";"0";;"Listening Snow Tower";"0";NULL
+"89857";"Q60852532";"tt10400024";"0";;"Tolya the Robot";"0";NULL
+"90117";"Q64495795";"tt10515848";"0";;"Bureau of Transformer";"0";NULL
+"90155";"Q64626637";"tt10457374";"0";;"Growing Pain";"0";NULL
+"90231";"Q11046096";"tt10408966";"0";;"In Love With Power";"0";NULL
+"90529";"Q10873760";"tt12471020";"0";;"Memoirs in China";"0";NULL
+"90533";"Q17500106";"tt4025988";"0";;"Deng Xiaoping at History's Crossroads";"0";NULL
+"91159";"Q18124819";"tt10441730";"0";;"Firaaq";"0";NULL
+"92755";"Q56441160";"tt10874292";"0";;"My Mowgli Boy";"0";NULL
+"93287";"Q55635222";"tt7569576";"0";;"The Flight Attendant";"0";NULL
+"94291";"Q19829192";"tt4622278";"0";;"Swaragini";"0";NULL
+"96483";"Q60995468";"tt11410106";"0";;"Dreaming Back to the Qing Dynasty";"0";NULL
+"96721";"Q96378045";"tt10801274";"0";;"Flirty Dancing";"0";NULL
+"97190";"Q17622183";"tt3204050";"0";;"Baciamo le mani: Palermo-New York 1958";"0";NULL
+"97891";"Q28913385";"tt31790088";"0";;"Krejlerkongen";"0";NULL
+"99651";"Q85873813";"tt11834536";"0";;"Love of Thousand Years";"0";NULL
+"99707";"Q20649431";"tt0398572";"0";;"Station Zero";"1";NULL
+"100684";"Q678485";"tt0172040";"0";"r1208-premiers-baisers";"Premiers Baisers";"0";NULL
+"100745";"Q10656953";"tt0101185";"0";;"Rosenbaum";"0";NULL
+"100809";"Q89084724";"tt11058908";"0";"r1549516950-spyders";"Spyders";"0";NULL
+"102380";"Q26963069";"tt6061574";"0";;"Alyas Robinhood";"0";NULL
+"104083";"Q97279582";"tt12357086";"0";;"I Don't Want to Be Friends with You";"0";NULL
+"104519";"Q19391821";"tt0083487";"366523";;"Ta den ring";"0";NULL
+"104622";"Q11966286";"tt0142034";"366528";;"Dødelig kjemi";"0";NULL
+"104982";"Q64576957";"tt13847742";"0";;"Unrequited Love";"0";"90729"
+"105533";"Q85763342";"tt11657450";"0";;"Get a Clue";"0";NULL
+"105584";"Q137639264";"tt12492600";"0";;"Tales of the Lockdown";"0";NULL
+"106247";"Q37042472";"tt0456798";"0";;"Stine, Anders og Jeanette";"0";NULL
+"107681";"Q32173863";"tt9520740";"0";;"Yangko Dance";"0";NULL
+"107827";"Q10911163";"tt2857486";"0";;"原來愛·就是甜蜜";"0";NULL
+"107901";"Q10889419";"tt0843209";"0";;"Once Upon An Oridinary Girl";"0";NULL
+"108123";"Q99222386";"tt12928756";"0";;"My Unicorn Girl";"0";NULL
+"108739";"Q15897377";"tt6357224";"0";;"Fabulous 30";"0";NULL
+"110156";"Q751287";"tt1816754";"0";;"Astro-Show";"0";NULL
+"111095";"Q131370327";"tt13266238";"0";;"CyberSlav";"0";NULL
+"111155";"Q100630770";"tt13308954";"0";;"The Policeman's Daughter";"0";NULL
+"112318";"Q19851365";"tt10488244";"0";;"Marshal Peng Dehuai";"0";NULL
+"112393";"Q11567118";"tt1161663";"0";;"The Fire Still Burns";"0";NULL
+"113846";"Q823843";"tt1254039";"0";;"Mensen zoals jij en ik";"0";"129135"
+"113975";"Q103916805";"tt12409686";"0";;"Healer of Children";"0";NULL
+"114730";"Q114648242";"tt14454896";"0";;"Six degrés";"0";NULL
+"114910";"Q64334734";"tt10389000";"0";;"Even tot Hier";"0";NULL
+"114931";"Q12002260";"tt1861103";"0";;"Spesialenheten";"0";NULL
+"115396";"Q89988228";"tt14472170";"0";;"We are the Littles";"0";NULL
+"116017";"Q104727208";"tt14067750";"0";;"Youn Stay";"0";NULL
+"116074";"Q131785071";"tt16526150";"0";;"Mrkomir the First";"0";NULL
+"116179";"Q105438370";"tt11162652";"0";;"Inspector Ricciardi";"0";NULL
+"116319";"Q30020561";"tt4437292";"0";;"Vlasik: The Shadow of Stalin";"0";"232002"
+"117999";"Q11501013";"tt1161689";"0";;"Shin Heike Monogatari";"0";NULL
+"118138";"Q17230889";"tt1160976";"0";;"Taikouki";"0";NULL
+"118651";"Q137043714";"tt21307620";"0";;"A Song of Sword as Pillow";"0";NULL
+"118682";"Q624988";"tt3510914";"0";;"Eyes of Dawn";"0";NULL
+"119999";"Q1214698";"tt0250573";"0";;"Die Manns - Ein Jahrhundertroman";"0";NULL
+"120454";"Q117448683";"tt6222202";"0";;"Spotlight";"0";NULL
+"122010";"Q115727015";"tt14086140";"0";;"Drag, I Love You";"0";NULL
+"122553";"Q116885111";"tt13662114";"0";;"An Eye For An Eye";"0";NULL
+"123227";"Q106597677";"tt14509642";"0";;"The Glory of Youth";"0";NULL
+"124343";"Q106881101";"tt13039896";"0";;"Plan B";"0";NULL
+"125527";"Q107356050";"tt14411816";"0";;"Twist of Fate";"0";NULL
+"126660";"Q98744252";"tt11981644";"0";;"Professor T";"0";NULL
+"127162";"Q107167673";"tt13944138";"0";;"Maggie";"0";NULL
+"127255";"Q4769329";"tt11646394";"0";;"Annie Ki Ayegi Baraat";"0";NULL
+"127543";"Q7564144";"tt1429889";"0";;"Soul!";"0";NULL
+"127643";"Q110608259";"tt14865290";"0";;"Heist";"0";NULL
+"127828";"Q24000280";"tt12035244";"0";;"Legend Hero Samgugjeon";"0";NULL
+"127985";"Q7444021";"tt2189670";"0";;"The Legend of Wu Zetian";"0";NULL
+"128255";"Q65091279";"tt9789660";"0";;"Transformers: War for Cybertron: Kingdom";"0";NULL
+"128342";"Q112572529";"tt15000762";"0";;"Be Together";"0";NULL
+"129827";"Q96117370";"tt1265927";"0";;"The Smokey Bear Show";"0";NULL
+"129969";"Q10889348";"tt6863368";"0";;"Love Story in Shanghai";"0";NULL
+"131614";"Q108680820";"tt17512670";"0";;"South Wind Knows";"0";NULL
+"131695";"Q263114";"tt0985264";"0";;"Domino Day";"0";NULL
+"131708";"Q108502700";"tt14784770";"0";;"Messyness";"0";NULL
+"131936";"Q132124725";"tt13843380";"0";;"Algérie secrète";"0";NULL
+"133193";"Q132181164";"tt27413863";"0";;"71° nord - team";"0";NULL
+"134028";"Q109927505";"tt15089704";"0";;"Tha God's Honest Truth with Charlamagne Tha God";"0";NULL
+"135266";"Q97174562";"tt0272394";"0";;"Les Jeunes Années";"0";NULL
+"135516";"Q10942884";"tt1383047";"0";;"Hero of the Year";"0";NULL
+"136832";"Q60993100";"tt10380336";"0";;"北部湾人家";"0";NULL
+"137800";"Q109413802";"tt27137485";"0";;"Warm on a Cold Night";"0";NULL
+"138371";"Q109553489";"tt4534140";"0";;"Napamiehet";"0";NULL
+"138741";"Q10873758";"tt0463277";"0";;"Chinese Style Divorce";"0";NULL
+"139000";"Q2928247";"tt2118094";"0";;"Bunny Maloney";"0";NULL
+"139432";"Q127688395";"tt2313615";"0";;"Animal Man";"0";NULL
+"156286";"Q110640025";"tt17279668";"0";;"Kandi & The Gang";"0";NULL
+"156293";"Q137574491";"tt39165989";"0";;"Concrete Market";"0";NULL
+"156960";"Q134591741";"tt14691120";"0";;"The terrible eighties";"0";NULL
+"156989";"Q108229504";"tt15285844";"0";;"Irreverent";"0";NULL
+"158133";"Q124057601";"tt9521346";"0";;"中国兄弟连";"0";NULL
+"158196";"Q111950109";"tt14369390";"0";;"Would I Lie to You?";"0";"4775"
+"196165";"Q129698473";"tt0075499";"196165";;"Die Dämonen";"0";NULL
+"197491";"Q118366920";"tt39068271";"0";;"Villains";"0";NULL
+"197594";"Q111520713";"tt19851408";"0";;"Die Glücksspieler";"0";NULL
+"199925";"Q113332411";"tt14597982";"0";;"Master of My Own";"0";NULL
+"200862";"Q13402105";"tt4957334";"0";;"Fatal Wine";"0";"58211"
+"201424";"Q111680671";"tt19759788";"0";;"My Lovely Bodyguard";"0";NULL
+"202221";"Q19356925";"tt4093214";"0";;"Endlich Deutsch!";"0";NULL
+"204747";"Q52428507";"tt8228876";"0";;"Katalonski";"0";NULL
+"205346";"Q113571619";"tt22353480";"0";;"Oh! My Sunshine Night";"0";NULL
+"206494";"Q118140521";"tt27850500";"0";;"Million-Follower Detective";"0";NULL
+"208883";"Q116783424";"tt11486212";"0";;"The Investigator";"0";NULL
+"209061";"Q136831136";"tt0254053";"0";;"Tatakae!! Ramenman";"0";NULL
+"209425";"Q100258242";"tt19838606";"0";;"Confessions of a Fashionista";"0";NULL
+"209916";"Q124357283";"tt30949068";"0";;"Sword and Fairy";"0";NULL
+"209985";"Q117427542";"tt22796478";"0";;"Kamen Rider Outsiders";"0";NULL
+"212055";"Q65159043";"tt15475278";"0";;"Plan B";"0";"69222"
+"212457";"Q115396924";"tt22640400";"0";;"The Traitors";"0";NULL
+"212957";"Q134105230";"tt36808372";"0";;"Shark: The Storm";"0";NULL
+"213898";"Q18151230";"tt3960750";"0";;"Judge Faith";"0";NULL
+"214250";"Q116790262";"tt26493973";"0";;"Jinny's Kitchen";"0";NULL
+"216271";"Q10679432";"tt0484018";"0";;"Stereo";"0";"53443"
+"217837";"Q137733224";"tt26006612";"0";;"Zomvivor";"0";NULL
+"219099";"Q105605226";"tt14088242";"0";;"All or Nothing";"0";NULL
+"219959";"Q1191955";"tt0493328";"0";;"Hanaukyou Maid Team";"0";NULL
+"220140";"Q117314063";"tt27003616";"0";;"Sleepless";"0";NULL
+"220207";"Q1821952";"tt2105659";"0";;"Mixed Up";"0";NULL
+"220731";"Q9016324";"tt0266157";"0";;"Juegos del destino";"0";NULL
+"222281";"Q116973100";"tt26773833";"0";;"Bekaboo";"0";"286605"
+"222360";"Q17415343";"tt0224932";"366559";;"The Nine O'Clock News Murder";"0";NULL
+"223622";"Q117336614";"tt26443401";"0";"73169895";"The Great American Joke Off";"0";NULL
+"225929";"Q123528553";"tt29688557";"0";;"Love is Panacea";"0";NULL
+"226940";"Q137692737";"tt25505780";"0";;"La vida de nosotras";"0";NULL
+"230442";"Q136087259";"tt28991851";"0";;"Frakke & Jempie";"0";NULL
+"231611";"Q126943691";"tt7714560";"0";;"Adventures in Wonder Park";"0";NULL
+"231990";"Q55697773";"tt9636134";"0";;"Fly Me to the Moon";"0";NULL
+"233833";"Q136890356";"tt39369595";"0";;"In Your Radiant Season";"0";NULL
+"235717";"Q126938370";"tt29194117";"0";"428821-superstar";"Superstar";"0";NULL
+"235998";"Q131999350";"tt29338465";"0";;"Mighty Monsterwheelies";"0";NULL
+"236719";"Q15912759";"tt6973610";"0";;"The Legend of Zhong Kui";"0";NULL
+"237182";"Q123102333";"tt29965244";"0";;"My Dear Gangster Oppa";"0";NULL
+"237348";"Q133454232";"tt29539341";"0";;"My Precious The Series";"0";NULL
+"238056";"Q10927584";"tt2249322";"0";;"团圆";"0";"87093"
+"239770";"Q126960117";"tt31433814";"0";;"Doctor Who";"0";NULL
+"241793";"Q124390846";"tt30488515";"0";;"Lightseeker: The Story of the Young Mao Zedong";"0";NULL
+"243248";"Q130596425";"tt35934396";"0";;"Queen Mantis";"0";NULL
+"243286";"Q133512927";"tt30175314";"0";;"Planet Lulin";"0";NULL
+"244168";"Q131786475";"tt30599948";"0";;"Skin";"0";NULL
+"244462";"Q116869449";"tt32039377";"0";;"The Tiger and Her Wings";"0";NULL
+"246321";"Q125457575";"tt32502963";"0";;"Yips";"0";NULL
+"248488";"Q136682143";"tt31536241";"0";;"Tell Me Your Name";"0";NULL
+"248633";"Q105871069";"tt14229282";"0";;"Dunk";"0";NULL
+"248844";"Q137899688";"tt31947416";"0";;"Ragouj";"0";NULL
+"251722";"Q130403777";"tt32106318";"0";;"Under The Gun";"0";NULL
+"251782";"Q10472249";"tt0310442";"0";;"Dieselråttor och sjömansmöss";"0";NULL
+"252301";"Q23888358";"tt5746866";"0";;"遗憾拼图";"0";NULL
+"252621";"Q133454245";"tt32201754";"0";;"Us";"0";NULL
+"252648";"Q136093871";"tt32226994";"0";;"The Dark Dice";"0";NULL
+"252654";"Q136971980";"tt32226897";"0";;"Friendshit Forever";"0";NULL
+"253268";"Q126951326";"tt32250453";"0";;"Who Killed WCW?";"0";NULL
+"254628";"Q126193106";"tt29768339";"0";;"Reunion";"0";NULL
+"257592";"Q131841856";"tt36435619";"0";;"ספין";"0";NULL
+"259537";"Q137533129";"tt33132245";"0";;"Sword Of Coming";"0";NULL
+"259856";"Q137697729";"tt35316779";"0";;"Salvador";"0";NULL
+"260185";"Q135882632";"tt37518291";"0";;"Schiphol Airport";"0";NULL
+"260293";"Q118196407";"tt38784676";"0";;"Unbound";"0";NULL
+"263290";"Q130273584";"tt30695066";"0";;"She and Her Girls";"0";NULL
+"270855";"Q136790475";"tt28116123";"0";;"Small Police Station";"0";NULL
+"270856";"Q137793676";"tt32021491";"0";;"The Company";"0";NULL
+"271328";"Q130369512";"tt33420341";"0";;"United High";"0";NULL
+"272423";"Q10592864";"tt2274450";"0";;"Mysteriet på Greveholm - Grevens återkomst";"0";NULL
+"272468";"Q131449957";"tt36173963";"0";;"Log Out";"0";NULL
+"272570";"Q130564644";"tt22169050";"0";;"Y llegaron de noche";"0";NULL
+"272637";"Q137908706";"tt33294281";"0";;"The Best Years";"0";NULL
+"275715";"Q137723083";"tt34375633";"0";;"I'm a Celebrity... Unpacked";"0";NULL
+"275817";"Q12209993";"tt5813240";"0";;"Khalid Ibn Al-Walid";"0";NULL
+"278142";"Q136803042";"tt34919837";"0";;"Burnout Syndrome";"0";NULL
+"278146";"Q131452555";"tt34929457";"0";;"Dare You to Death";"0";NULL
+"278176";"Q136093709";"tt34929753";"0";;"MuTeLuv";"0";NULL
+"278479";"Q1248256";"tt2438054";"0";;"Dancing with the Stars Croatia";"0";NULL
+"278639";"Q132819848";"tt34877015";"0";;"Extracted";"0";NULL
+"280685";"Q131728536";"tt35257695";"0";;"Ozark Law";"0";NULL
+"283890";"Q105487854";"tt14045030";"0";;"Jijaji Chhat Parr Koii Hai";"0";NULL
+"284666";"Q130759250";"tt38605838";"0";;"Un León en el Bosque";"0";NULL
+"284828";"Q137786109";"tt35932199";"0";;"Duang With You";"0";NULL
+"285145";"Q135741978";"tt11384478";"0";;"SMILLAS GESPÜR FÜR SCHNEE";"0";NULL
+"285278";"Q136532398";"tt39068875";"0";;"Idol I";"0";NULL
+"286231";"Q135934402";"tt36220598";"0";;"Heels in the Hay";"0";NULL
+"287376";"Q136746249";"tt35977295";"0";;"Love Design";"0";NULL
+"287570";"Q12699293";"tt34958371";"0";;"Once Upon A Time";"0";NULL
+"288362";"Q137179594";"tt36500675";"0";;"Rafaela and Her Crazy World";"0";NULL
+"289112";"Q134547658";"tt34370932";"0";;"Oktoberfest 1905";"0";NULL
+"289415";"Q600780";"tt2217902";"0";;"Reserva de Familia";"0";NULL
+"289485";"Q135642079";"tt36614693";"0";;"WWE: Unreal";"0";NULL
+"290884";"Q137754681";"tt36849388";"0";;"The Valley: Persian Style";"0";NULL
+"290918";"Q137782103";"tt36874852";"0";;"Pura sangre";"0";NULL
+"290962";"Q132151158";"tt34769125";"0";;"Ku'damm 77";"0";NULL
+"291496";"Q137835829";"tt36955608";"0";;"Our Sticky Love";"0";NULL
+"291573";"Q135153519";"tt37536372";"0";;"A Brighter Tomorrow";"0";NULL
+"291598";"Q10522992";"tt10838050";"0";;"Journey to the West: Legends of the Monkey King";"0";NULL
+"291926";"Q134572065";"tt36985714";"0";;"The Mortician";"0";NULL
+"292609";"Q123734928";"tt37479370";"0";;"What a Wonderful World";"0";NULL
+"292625";"Q137454059";"tt37062070";"0";;"Single Papa";"0";NULL
+"293298";"Q136005516";"tt37202552";"0";;"Most Wanted: Teen Hacker";"0";NULL
+"293546";"Q127688440";"tt2266141";"0";;"Plastic Man";"0";NULL
+"293703";"Q136506703";"tt18940264";"0";;"Dr. Seuss's Red Fish, Blue Fish";"0";NULL
+"294120";"Q135192953";"tt37367168";"0";;"The Revenge Club";"0";NULL
+"296187";"Q137145275";"tt39052819";"0";;"Pogány Induló: Vajon mit mondana anya";"0";NULL
+"296703";"Q3050319";"tt0222522";"0";;"El amor nunca muere";"0";NULL
+"297240";"Q135437664";"tt37918765";"0";;"Boksen Danmark";"0";NULL
+"298803";"Q136360555";"tt37982078";"0";;"Departament Amades";"0";NULL
+"299201";"Q4824734";"tt0310416";"0";;"Australian Survivor";"0";"10957"
+"299852";"Q136223019";"tt38047829";"0";;"AKA";"0";NULL
+"300397";"Q137583734";"tt38644726";"0";;"JUST MAKEUP";"0";NULL
+"300523";"Q137848943";"tt38336631";"0";;"Road";"0";NULL
+"301323";"Q134983308";"tt37216665";"0";;"The House Next to the River";"0";NULL
+"301391";"Q136360352";"tt38483587";"0";;"Gènesi";"0";NULL
+"301886";"Q136091871";"tt39303266";"0";;"To My Beloved Thief";"0";NULL
+"302521";"Q135287476";"tt33320551";"0";;"The Traitors Romania";"0";NULL
+"303030";"Q17640355";"tt0406128";"0";;"Per amore per vendetta";"0";NULL
+"303076";"Q136642313";"tt39073388";"0";;"First Man";"0";NULL
+"306520";"Q137774590";"tt39019283";"0";;"Die Kantoor";"0";NULL
+"306529";"Q137845716";"tt38282411";"0";;"A.B.I.";"0";NULL
+"306600";"Q137595356";"tt39029438";"0";;"How to Survive My CEO";"0";NULL
+"306600";"Q137360618";"tt39029438";"0";;"How to Survive My CEO";"0";NULL
+"307602";"Q137183750";"tt39375564";"0";;"Recipe For Love";"0";NULL
+"307923";"Q137798815";"tt39375415";"0";;"Matori & Kyoken Men in the Back Alleys";"0";NULL
+"307975";"Q135650221";"tt37648463";"0";;"The Imposter";"0";NULL
+"308201";"Q137329504";"tt39168230";"0";;"Reply 1988 10th Anniversary";"0";NULL
+"308893";"Q137734773";"tt39285179";"0";;"The Racer and His Dr. Perfect";"0";NULL
+"309091";"Q137426613";"tt38989329";"0";;"Inspekce";"0";NULL
+"309129";"Q137637221";"tt38044662";"0";;"Snake Killer";"0";NULL
+"309209";"Q106663823";"tt0391643";"0";;"Joulukalenteri: Heinähattu ja Vilttitossu joulun jäljillä";"0";NULL
+"309256";"Q137608260";"tt39254884";"0";;"Shish Maheh";"0";NULL
+"309302";"Q10427856";"tt0310425";"0";;"Bella bland kryddor och kriminella";"0";NULL
+"309328";"Q137887016";"tt39222526";"0";;"Shadows of Love";"0";NULL
+"309372";"Q2996814";"tt0255726";"0";;"Coplan";"0";NULL
+"309397";"Q39474896";"tt0165031";"0";;"Harjunpää och kalla döden";"0";NULL
+"309508";"Q6169796";"tt0224993";"0";;"Yara";"0";NULL
+"309575";"Q130350142";"tt39089455";"0";;"Murder at the Dead Sea";"0";NULL
+"309592";"Q4057436";"tt0963382";"0";;"Адвокат";"0";NULL
+"309595";"Q11892038";"tt1196509";"0";;"The Island of Inis Cool";"0";NULL
+"309697";"Q18124283";"tt4296656";"0";;"Ajeeb Daastaan Hai Ye";"0";NULL
+"309722";"Q30921011";"tt10492170";"0";;"Giọng ải giọng ai";"0";NULL
+"309737";"Q8261761";"tt0211785";"0";;"Canción de amor";"0";NULL
+"309803";"Q20128092";"tt4742490";"0";;"Ek Nayi Ummeed: Roshni";"0";NULL
+"309831";"Q1248964";"tt0365975";"0";;"El Alma Herida";"0";NULL
+"309967";"Q3286002";"tt0210422";"0";;"Infierno en el paraíso";"0";NULL
+"309973";"Q86662535";"tt0174322";"0";;"E' proibito ballare";"0";NULL
+"310032";"Q128925183";"tt33111580";"0";;"Walking in the Bright Sky";"0";NULL
+"310036";"Q4442909";"tt1718538";"0";;"Столица греха";"0";NULL
+"310045";"Q137455848";"tt34692346";"0";;"To Love, To Lose";"0";NULL
+"310049";"Q137842973";"tt36713340";"0";;"Wicked Game";"0";NULL
+"310057";"Q4009684";"tt0349039";"0";;"Venny";"0";NULL
+"310070";"Q137791466";"tt39246124";"0";;"Defying Destiny";"0";NULL
+"310085";"Q5991573";"tt1981902";"0";;"Maniàtics";"0";NULL
+"310087";"Q9021881";"tt1035008";"0";;"Les Moreres";"0";NULL
+"310090";"Q14121332";"tt1963776";"0";;"Senyor retor";"0";NULL
+"310131";"Q10387591";"tt0211823";"0";;"Una luz en el camino";"0";NULL
+"310171";"Q17772981";"tt0273343";"0";;"Folk i farta";"0";NULL
+"310193";"Q20687728";"tt6429506";"0";;"700歲旅程";"0";NULL
+"310246";"Q8963776";"tt0211805";"0";;"Gente bien";"0";NULL
+"310257";"Q131406899";"tt0471497";"0";;"Il marchese di Roccaverdina";"0";NULL
+"310516";"Q8349758";"tt0211790";"0";;"Confidente de secundaria";"0";NULL
+"310519";"Q2888809";"tt0320065";"0";;"Maria Madrugada";"0";NULL
+"310555";"Q3282329";"tt0211830";"0";;"Mi querida Isabel";"0";NULL
+"310561";"Q3900964";"tt9024200";"0";;"La Compète or  Pierre und Isa";"0";NULL
+"310664";"Q3699447";"tt0335644";"0";;"Cuore (2001)";"0";NULL
+"310673";"Q72829330";"tt3814654";"0";;"24 minuta sa Zoranom Kesićem";"0";NULL
+"310704";"Q1442465";"tt0346415";"0";;"The Tex Avery Show";"0";NULL
+"310733";"Q25339895";"tt5195782";"0";;"替身";"0";NULL
+"310748";"Q109299606";"tt21925160";"0";;"Cat's Head";"0";NULL
+"310800";"Q137772351";"tt39303992";"0";;"Siren's Kiss";"0";NULL
+"310801";"Q1976045";"tt0221662";"0";;"Triplets";"0";NULL
+"310849";"Q11956972";"tt0276640";"366519";;"Affæren Anders Jahre";"0";NULL
+"310856";"Q11959755";"tt0276787";"366527";;"Av måneskinn gror det ingenting";"0";NULL
+"310866";"Q1210925";"tt0073953";"300882";;"Die Affäre Lerouge";"0";NULL
+"310870";"Q56409213";"tt6034730";"0";;"Lisenskontrolløren";"0";NULL
+"310875";"Q5557716";"tt0220246";"0";;"My Brother-In-Law";"0";NULL
+"310877";"Q5735236";"tt0227880";"0";;"Good Neighbors";"0";NULL
+"310880";"Q5473527";"tt0219444";"0";;"Orange and a half";"0";NULL
+"310929";"Q137393549";"tt37980553";"0";;"Populära problem";"0";NULL
+"310966";"Q10360001";"tt0211854";"0";;"Retrato de familia";"0";NULL
+"310981";"Q17413093";"tt0279808";"366530";;"Farlig yrke";"0";NULL
+"310985";"Q11977924";"tt0279567";"366529";;"Jakten på Mangas Coloradas";"0";NULL
+"311083";"Q28856311";"tt0331750";"0";;"Hvornår var det nu det var?";"0";NULL
+"311364";"Q4300956";"tt0213335";"0";;"Buscando el paraíso";"0";NULL
+"311371";"Q9005071";"tt0271910";"0";;"Hoy";"0";NULL
+"311404";"Q11999130";"tt0280087";"366532";;"Saken Ruth Vang";"0";NULL
+"311460";"Q10337537";"tt0209712";"0";;"Nossa Filha Gabriela";"0";NULL
+"311484";"Q4300948";"tt0220878";"0";;"Clarisa";"0";NULL
+"311502";"Q4189489";"tt0222633";"0";;"Sueño de amor";"0";NULL
+"311518";"Q3517109";"tt3630700";"0";;"Teen Days";"0";NULL
+"311579";"Q12001860";"tt0279602";"366490";;"Solospill";"0";NULL
+"311644";"Q3704822";"tt0215456";"0";;"La última esperanza";"0";NULL
+"311645";"Q23566257";"tt4554406";"353789";;"Hostages of the SS";"0";NULL
+"311649";"Q4206208";"tt5668426";"396984";;"Proceed to the Investigation";"0";NULL
+"311657";"Q19380363";"tt3739134";"0";;"Lykkespill";"0";NULL
+"311680";"Q86750416";"tt11170862";"0";;"Cosmos: Mundos Posibles";"0";"58474"
+"311718";"Q55074837";"tt8142124";"0";;"Shrimaan Shrimati Phir Se";"0";NULL
+"311738";"Q6846852";"tt0498438";"0";;"Ma Ze Ha-Shtuyot Ha-Ele";"0";NULL
+"311771";"Q16053336";"tt10569916";"0";;"Kooche Aghaghia";"0";NULL
+"311780";"Q3616390";"tt0221771";"0";;"Las secretas intenciones";"0";NULL
+"311898";"Q3985798";"tt0077212";"290731";;"The Bastard";"0";NULL
+"311917";"Q3616492";"tt0220937";"0";;"La sonrisa del Diablo";"0";NULL
+"311989";"Q130381652";"tt32019766";"0";;"Dying Earth";"0";NULL
+"312016";"Q133252244";"tt33060122";"0";;"Rascal Does Not Dream Of Santa Claus";"0";NULL
+"312059";"Q101003241";"tt1167357";"0";;"Χρυσά Κορίτσια";"0";NULL
+"312083";"Q3338922";"tt0161172";"0";;"Milagro y magia";"0";NULL
+"312090";"Q56358931";"tt28646686";"0";;"Gol Mangoli";"0";NULL
+"312176";"Q3338900";"tt0266201";"0";;"Vida robada";"0";NULL
+"312227";"Q3338912";"tt0220947";"0";;"Yo no creo en los hombres";"0";NULL
+"312257";"Q2882688";"tt0222658";"0";;"Ángeles blancos";"0";NULL
+"312310";"Q2919072";"tt0229887";"0";;"Cenizas y diamantes";"0";NULL
+"312350";"Q5804482";"tt0224860";"0";;"Destino";"0";NULL
+"312387";"Q9019286";"tt0222558";"0";;"La fuerza del amor";"0";NULL
+"312425";"Q137901380";"tt35836487";"0";;"Hildur";"0";NULL
+"312458";"Q5824535";"tt0229891";"0";;"El cristal empañado";"0";NULL
+"312494";"Q5977976";"tt0224836";"0";;"Lo blanco y lo negro";"0";NULL
+"312554";"Q6024255";"tt0229910";"0";;"Morir para vivir";"0";NULL
+"312556";"Q30166623";"tt0122817";"0";;"Domino";"0";NULL
+"312651";"Q5813814";"tt0229892";"0";;"Dos vidas";"0";NULL
+"312653";"Q5832278";"tt0212657";"0";;"Encadenados";"0";NULL
+"312703";"Q12754450";"tt0346320";"0";;"Goodnight, Children";"0";NULL
+"312741";"Q5862691";"tt0220896";"0";;"Flor y canela";"0";NULL
+"312747";"Q1249051";"tt0229914";"0";;"Nuevo amanecer";"0";NULL
+"312802";"Q136556712";"tt35664058";"0";;"Buffy the Vampire Slayer: New Sunnydale";"0";NULL
+"312826";"Q137382345";"tt39168318";"0";;"The Village Barber";"0";NULL
+"312842";"Q5796881";"tt0244337";"0";;"Cómo duele callar";"0";NULL
+"312856";"Q465948";"tt2154974";"0";;"A gyanú árnyékában";"0";NULL
+"312942";"Q5826208";"tt0229921";"0";;"El precio de la fama";"0";NULL
+"312948";"Q5826493";"tt0224957";"0";;"El rincón de los prodigios";"0";NULL
+"312950";"Q3744545";"tt1284232";"0";;"Trust Me";"0";NULL
+"312965";"Q130463652";"tt33709080";"0";;"Lokes hemlighet";"0";NULL
+"312995";"Q9081548";"tt0222638";"0";;"Tal como somos";"0";NULL
+"313033";"Q6161511";"tt0218793";"0";;"Victoria";"0";NULL
+"313053";"Q49097756";"tt6278546";"0";;"Dela lika";"0";NULL
+"313080";"Q10405646";"tt0246351";"500440";;"Allis med is";"0";NULL
+"313081";"Q5758954";"tt0222540";"0";;"Cautiva";"0";NULL
+"313087";"Q18331951";"tt4424020";"0";;"Peters baby";"0";NULL
+"313091";"Q28494966";"tt0260642";"0";;"Papa revient demain...";"0";NULL
+"313093";"Q119844688";"tt23747876";"0";;"Тень Чикатило";"0";NULL
+"313124";"Q5768773";"tt0264232";"0";;"Cicatrices del alma";"0";NULL
+"313155";"Q17989351";"tt8374588";"0";;"Badi Doooor Se Aaye Hai";"0";NULL
+"313224";"Q104425422";"tt14622236";"0";;"#CoupleChallenge - Das stärkste Team gewinnt";"0";NULL
+"313248";"Q3234907";"tt1390697";"0";;"Les procès témoins de leur temps";"0";NULL
+"313262";"Q1442265";"tt0118476";"0";;"Spellbinder: Land of the Dragon Lord";"0";NULL
+"313265";"Q2841846";"tt0222584";"0";;"Lista negra";"0";NULL
+"313299";"Q5999196";"tt0245640";"0";;"Marionetas";"0";NULL
+"313322";"Q3538048";"tt0348238";"0";;"Trapos Íntimos";"0";NULL
+"313332";"Q6002647";"tt0245641";"0";;"Martín Garatuza";"0";NULL
+"313365";"Q3050345";"tt0244918";"0";;"El padre Gallo";"0";NULL
+"313373";"Q6081118";"tt0252779";"0";;"Pobre juventud";"0";NULL
+"313376";"Q26827896";"tt5793764";"0";;"Zlatni dvori";"0";NULL
+"313393";"Q130641069";"tt34329944";"0";;"Skattjakten med IJustWantToBeCool";"0";NULL
+"313404";"Q6139499";"tt0823367";"0";;"Te Tengo En Salsa";"0";NULL
+"313413";"Q5827168";"tt0214387";"0";;"El ángel caído";"0";NULL
+"313477";"Q5980645";"tt0222528";"0";;"Los años pasan";"0";NULL
+"313481";"Q2034861";"tt0373587";"0";;"Power Rangers DinoThunder";"0";NULL
+"313501";"Q116921552";"tt11834488";"0";;"Inside Bedford-Stuyvesant";"0";NULL
+"313510";"Q5840250";"tt0224873";"0";;"Esperándote";"0";NULL
+"313552";"Q112631839";"tt14986406";"0";;"Bleach - Thousand-Year Blood War";"0";NULL
+"313587";"Q10468685";"tt0140316";"0";;"Den korsikanske biskopen";"0";NULL
+"313607";"Q6025672";"tt0224924";"0";;"Muchachita";"0";NULL
+"313617";"Q7939689";"tt0100884";"516676";;"Voices Within: The Lives of Truddi Chase";"0";NULL
+"313622";"Q3202303";"tt0090657";"335675";;"L'Argent";"0";NULL
+"313648";"Q5980643";"tt0264223";"0";;"Los años felices";"0";NULL
+"313650";"Q5981104";"tt2055253";"0";;"The Kids on the Bridge";"0";NULL
+"313678";"Q19931429";"tt0380087";"0";;"Aprendiendo a vivir";"0";NULL
+"313679";"Q5886914";"tt0224881";"0";;"Guadalupe";"0";NULL
+"313712";"Q4189843";"tt4263898";"0";;"Звёздный час";"0";NULL
+"313740";"Q3821930";"tt0260828";"443306";;"La coscienza di Zeno";"0";NULL
+"313769";"Q2505280";"tt0254020";"0";;"Fabian van Fallada";"0";NULL
+"313792";"Q18486774";"tt0381813";"0";;"Te amo";"0";NULL
+"313801";"Q5968290";"tt0214376";"0";;"La traición";"0";NULL
+"313815";"Q11092053";"tt3948184";"0";;"你照亮我星球";"0";NULL
+"313837";"Q5682292";"tt0222536";"0";;"Tú eres mi destino";"0";NULL
+"313923";"Q29578362";"tt7722500";"0";;"Don't Ask Me Ask Britain";"0";NULL
+"313925";"Q5476305";"tt0224828";"0";;"El amor ajeno";"0";NULL
+"313945";"Q35359197";"tt7145804";"0";;"Another Life";"0";NULL
+"313985";"Q5793089";"tt0215404";"0";;"Cuando los hijos se van";"0";NULL
+"314057";"Q19399190";"tt1872763";"0";;"Åse tonight";"0";NULL
+"314062";"Q5727610";"tt0215395";"0";;"Bianca Vidal";"0";NULL
+"314194";"Q1249267";"tt1124351";"0";;"Ponos Ratkajevih";"0";NULL
+"314210";"Q5978057";"tt0329873";"0";;"Lo que el cielo no perdona";"0";NULL
+"314211";"Q6007896";"tt0222593";"0";;"Mañana es primavera";"0";NULL
+"314215";"Q5306449";"tt7348590";"0";;"Dream Street";"0";NULL
+"314225";"Q113745084";"tt24637590";"0";;"Barbara Salesch – Das Strafgericht";"0";NULL
+"314238";"Q6401764";"tt13911128";"0";;"Yawmiyat Modeer Aam";"0";NULL
+"314251";"Q3234092";"tt2563792";"0";;"As Misteriosas Cidades de Ouro";"0";NULL
+"314354";"Q105040060";"tt11231212";"0";;"Χάλι εντ";"0";NULL
+"314385";"Q16619393";"tt3501196";"0";;"Una mamma imperfetta";"0";NULL
+"314418";"Q19571678";"tt0324813";"0";;"Espejismo";"0";NULL
+"314465";"Q5853657";"tt0214346";"0";;"Extraños caminos del amor";"0";NULL
+"314532";"Q6448127";"tt0215421";"0";;"Infamia";"0";"125739"
+"314565";"Q16931648";"tt0079783";"142975";;"The Rebels";"0";NULL
+"314636";"Q74861850";"tt3189976";"0";;"Gravity Falls Shorts";"0";NULL
+"314662";"Q25439136";"tt4719708";"0";;"S.O.S Fairy Manu";"0";NULL
+"314688";"Q18478007";"tt0329900";"0";;"Nosotras las mujeres";"0";NULL
+"314700";"Q4271846";"tt0805416";"0";;"Любовь как любовь";"0";NULL
+"314701";"Q134367826";"tt22522848";"0";;"Teen Camp";"0";NULL
+"314747";"Q6095478";"tt0222617";"0";;"Quiéreme siempre";"0";NULL
+"314751";"Q105846657";"tt1586121";"0";;"Mister Charlesworth";"0";NULL
+"314754";"Q5989637";"tt0299345";"0";;"Magazine For Fai";"0";NULL
+"314801";"Q10389933";"tt0266200";"0";;"Verónica";"0";NULL
+"314843";"Q6131497";"tt0222631";"0";;"Soledad";"0";NULL
+"314868";"Q2644182";"tt0832330";"513106";;"The Legend of Zelda";"0";NULL
+"314884";"Q6025667";"tt0222598";"0";;"Muchacha de barrio";"0";NULL
+"314885";"Q116267006";"tt5030592";"0";;"Les Aventures de la Famille Glady";"0";NULL
+"314903";"Q23001881";"tt1795724";"0";;"Animism: The Gods' Lake";"0";NULL
