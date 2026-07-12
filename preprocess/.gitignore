@@ -40,8 +40,6 @@ local_chromadb_topics_en/
 Thumbs.db
 
 citizenphilsecrets.py
-data/
-
-# Claude Code / agent local tooling
-.claude/
-.agents/
+wikidata-id-movie-fix/
+wikidata-id-serie-fix/
+wikidata-id-person-fix/

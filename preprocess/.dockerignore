@@ -1,0 +1,38 @@
+# Never bake secrets into the image — pass them at runtime with --env-file.
+.env
+.env.*
+!.env.example
+
+# Python build artefacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Local state and generated CSV output (mounted at runtime, not baked in)
+wikidata-id-movie-fix/
+wikidata-id-serie-fix/
+wikidata-id-person-fix/
+*.log
+
+# VCS / editor / OS noise
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project docs / licence (not needed inside the image)
+README.md
+LICENSE
+
+# Host launcher scripts (run on the host, not inside the container)
+selenium-tmdb.sh
+on.sh
+off.sh

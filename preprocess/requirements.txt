@@ -1,0 +1,4 @@
+pymysql
+numpy
+pytz
+python-dotenv>=1.0.0
