@@ -41,7 +41,9 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 
 ## Configuration & secrets
 
-- Local config comes from a `.env` at the repo root, loaded via `python-dotenv`. Required keys (see [.env.example](.env.example)): `TMDB_LOGIN`, `TMDB_PASSWORD`, `SFTP_HOST`, `SFTP_LOGIN`, `SFTP_PASSWORD`, `SFTP_FOLDER`. The notebook raises `ValueError` if any are missing.
+- Local config comes from a `.env` at the repo root, loaded via `python-dotenv`. Required keys (see [.env.example](.env.example)): `TMDB_LOGIN`, `TMDB_PASSWORD`, `SFTP_HOST`, `SFTP_LOGIN`, `SFTP_FOLDER`. The notebook raises `ValueError` if any are missing. Optional keys: `SFTP_PORT` (default `22`), `SFTP_SSHHOSTKEYFINGERPRINT`, `SFTP_KEY`, `SFTP_KEY_PASSPHRASE`, `SFTP_PASSWORD`.
+- **SFTP authentication order** (`open_sftp_connection` in the helpers cell): SSH public key first — `SFTP_KEY`, else the `IdentityFile` for `SFTP_HOST` in `~/.ssh/config` (`IdentitiesOnly` honoured), else the default `~/.ssh/id_*` files, else an SSH agent — then `SFTP_PASSWORD` as fallback when set. Keep that order; the password path exists only as a second choice. A passphrase-protected key uses `SFTP_KEY_PASSPHRASE` or an interactive `getpass` prompt, never a plaintext value in the notebook.
+- **Host verification** is pinned to `SFTP_SSHHOSTKEYFINGERPRINT` (WinSCP `SshHostKeyFingerprint` format, shared with the PowerShell scripts) via `FingerprintHostKeyPolicy`, not to `known_hosts`. A mismatch raises `HostKeyVerificationError` and must never be retried with the password fallback or downgraded to `AutoAddPolicy` — the `known_hosts` + `AutoAddPolicy` branch is only for an empty fingerprint, and it warns.
 - `SFTP_FOLDER` must point at the VPS directory containing the `wikidata-id-{movie,serie,person}-fix/` subfolders produced by the `preprocess/` job.
 - **CSV input format**: `;`-separated, `"`-quoted, one row per record to fix. Header columns: `ID_MOVIE`/`ID_SERIE`/`ID_PERSON` (TMDb numeric ID to update), `ID_WIKIDATA` (target QID, e.g. `Q644554`), `ID_IMDB` (match key, informational), `TITLE`/`NAME` and `ADULT` (informational), and `ID_*_ERASE_WIKIDATA_ID` (TMDb ID of a conflicting record whose QID must be cleared first; may be empty / `NULL` / `NaN`). The notebook picks the most recently modified CSV per dataset.
 - **Selenium / ChromeDriver**: a **headed** Chrome session is used (login may trigger a manual CAPTCHA). The matching ChromeDriver is fetched automatically by `webdriver-manager` (cached in `~/.wdm/`); delete that dir to force a re-download after a Chrome upgrade.
@@ -58,7 +60,7 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 
 ---
 
-**Last Updated**: 2026-06-03
+**Last Updated**: 2026-08-10
 **Current Version**: 1.0.0
 
 ## Backlog (Nestor second-brain)

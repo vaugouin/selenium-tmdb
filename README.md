@@ -108,16 +108,58 @@ TMDB_PASSWORD=your_tmdb_password
 
 # VPS hosting the preprocess Docker container
 SFTP_HOST=your_sftp_host
+SFTP_PORT=22
 SFTP_LOGIN=your_sftp_login
-SFTP_PASSWORD=your_sftp_password
 SFTP_FOLDER=/home/debian/docker/selenium-tmdb
+
+# Server verification (WinSCP SshHostKeyFingerprint format)
+SFTP_SSHHOSTKEYFINGERPRINT=ssh-ed25519 256 SHA256:your_base64_digest
+
+# First choice: SSH public-key authentication (both optional)
+SFTP_KEY=
+SFTP_KEY_PASSPHRASE=
+
+# Second choice: password authentication (leave empty to disable)
+SFTP_PASSWORD=
 ```
 
-`SFTP_FOLDER` must point to the directory that contains the
+`SFTP_HOST`, `SFTP_LOGIN` and `SFTP_FOLDER` are the only mandatory SFTP
+variables. `SFTP_FOLDER` must point to the directory that contains the
 `wikidata-id-movie-fix/`, `wikidata-id-serie-fix/` and
 `wikidata-id-person-fix/` subfolders produced by the preprocess job.
 
 `.env` is git-ignored — never commit credentials.
+
+### SFTP authentication
+
+The notebook tries two authentication methods, in this order:
+
+1. **SSH public key** (first choice) — `SFTP_LOGIN` plus a private key. The key
+   is looked up in this order: `SFTP_KEY`, then the `IdentityFile` declared for
+   `SFTP_HOST` in `~/.ssh/config` (`IdentitiesOnly yes` is honoured, so the
+   server is not offered every key on the machine), then the default
+   `~/.ssh/id_*` files, then any running SSH agent. If the key is
+   passphrase-protected, the notebook uses `SFTP_KEY_PASSPHRASE` when set and
+   otherwise prompts for it once — keeping the passphrase out of `.env` and out
+   of the notebook output.
+2. **Password** (second choice) — used only when `SFTP_PASSWORD` is set, and
+   only after key authentication has failed.
+
+In both cases the server itself is verified against
+`SFTP_SSHHOSTKEYFINGERPRINT`, using the same value format as WinSCP's
+`SessionOptions.SshHostKeyFingerprint` so it can be shared with the PowerShell
+scripts. A mismatch aborts the connection immediately and is never retried with
+the password. Accepted shapes:
+
+```
+ssh-ed25519 256 SHA256:<base64>
+ssh-ed25519 256 <base64>
+SHA256:<base64>
+ssh-rsa 2048 aa:bb:…:ff          # MD5
+```
+
+If `SFTP_SSHHOSTKEYFINGERPRINT` is left empty the notebook prints a warning and
+falls back to `~/.ssh/known_hosts`.
 
 ### Secrets and Docker
 
@@ -217,8 +259,18 @@ This file is git-ignored (`*.log`) and can be tailed during a run.
 
 ## Troubleshooting
 
-- **`ValueError: Missing SFTP/TMDB configuration`** — your `.env` is missing
-  one of the five required variables. Copy from `.env.example`.
+- **`ValueError: Missing SFTP/TMDB configuration`** — your `.env` is missing one
+  of the mandatory variables (`SFTP_HOST`, `SFTP_LOGIN`, `SFTP_FOLDER`,
+  `TMDB_LOGIN`, `TMDB_PASSWORD`). Copy from `.env.example`.
+- **`SSH host key fingerprint mismatch` / `SSH host key type mismatch`** — the
+  server key does not match `SFTP_SSHHOSTKEYFINGERPRINT`. The error prints both
+  the presented and the expected digest: update the `.env` only if you know why
+  the VPS host key changed, otherwise treat it as a failed verification.
+- **`SFTP SSH key authentication failed`** — no usable private key was found for
+  `SFTP_LOGIN`. Check `SFTP_KEY` or the `IdentityFile` entry for `SFTP_HOST` in
+  `~/.ssh/config`, and supply the passphrase at the prompt (or via
+  `SFTP_KEY_PASSPHRASE`) if the key is protected. Setting `SFTP_PASSWORD` gives
+  you the password fallback.
 - **`FileNotFoundError: No file found matching ...`** — the SFTP download
   returned no files. Check that the preprocess container ran today on the VPS
   (see [preprocess/README.md](preprocess/README.md)) and that `SFTP_FOLDER` is
