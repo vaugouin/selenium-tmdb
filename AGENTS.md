@@ -81,6 +81,20 @@ Stack-wide convention, set 2026-08-20. Every **read-only** `.sql` of this repo, 
 queries, monitoring queries, exports, reference DDL dumps, lives in `doc/sql/`, never
 at the root and never in a `doc/queries/` of its own.
 
+**This repo currently has no `doc/sql/`, and that is correct.** Its only three `.sql`
+files, `wikidata-id-movie-fix.sql`, `wikidata-id-serie-fix.sql` and
+`wikidata-id-person-fix.sql`, are **executed** by process 1 of `preprocess/selenium-tmdb.py`,
+so they fall under the first exception below and stay in `preprocess/`.
+
+The trap is worth spelling out, because it cost a broken run on 2026-08-20. That process
+does not name the files: it does `sorted(Path(__file__).resolve().parent.glob("*.sql"))`
+(`preprocess/selenium-tmdb.py:56-57`), executes whatever it finds **next to itself**, and
+writes each result to `preprocess/<basename>/<basename>-YYYYMMDD.csv` for the SFTP upload
+the notebooks consume. A wildcard leaves no reference to grep for, so moving the files
+away broke nothing visibly: the glob simply matched zero files and the process produced
+no CSV at all. Two consequences. Never move a `.sql` out of `preprocess/`. And never add
+a `.sql` to `preprocess/` that you do not want executed on the next run.
+
 Two deliberate exceptions, and they are the reason the rule is worded around reading
 rather than around file type. A `.sql` **executed by code** stays where the code expects
 it, because moving it breaks a run silently. And a `.sql` that **writes** (migration,
