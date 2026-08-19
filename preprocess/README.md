@@ -50,9 +50,9 @@ CitizenPhil stack can observe progress and runtime.
 | [selenium-tmdb.py](selenium-tmdb.py) | Entry point — runs every `*.sql` in this folder and writes one CSV per query. |
 | [selenium-tmdb.sh](selenium-tmdb.sh) | Host launcher: builds the image if needed and runs the container detached with `--env-file` for secrets. |
 | [citizenphil.py](citizenphil.py) | Shared helpers: DB connection, server-variable get/set, SQL escaping, error handling. |
-| [wikidata-id-movie-fix.sql](wikidata-id-movie-fix.sql) | Movies whose TMDB `ID_WIKIDATA` is missing/invalid while Wikidata has a match by IMDb ID. |
-| [wikidata-id-serie-fix.sql](wikidata-id-serie-fix.sql) | Same for TV series. |
-| [wikidata-id-person-fix.sql](wikidata-id-person-fix.sql) | Same for persons. |
+| [wikidata-id-movie-fix.sql](../doc/sql/wikidata-id-movie-fix.sql) | Movies whose TMDB `ID_WIKIDATA` is missing/invalid while Wikidata has a match by IMDb ID. |
+| [wikidata-id-serie-fix.sql](../doc/sql/wikidata-id-serie-fix.sql) | Same for TV series. |
+| [wikidata-id-person-fix.sql](../doc/sql/wikidata-id-person-fix.sql) | Same for persons. |
 | [wikidata-id-movie-fix/](wikidata-id-movie-fix/) | Generated CSVs for movies (git-ignored). |
 | [wikidata-id-serie-fix/](wikidata-id-serie-fix/) | Generated CSVs for series (git-ignored). |
 | [wikidata-id-person-fix/](wikidata-id-person-fix/) | Generated CSVs for persons (git-ignored). |
