@@ -14,7 +14,7 @@ This is the single canonical guide for autonomous coding agents in this reposito
 
 `selenium-tmdb` is the acquisition-side automation repo of the **Agent BBB** movie/TV database system (owner `vaugouin`). It drives the **themoviedb.org website** through a real, logged-in Chrome session to **write Wikidata QIDs into TMDb external-ID fields** for movies, TV series, and persons — data that the official TMDb API does not let you write. It therefore complements the read-side Wikidata crawlers (`sparql-movies-persons` / `sparql-crawler` / `wikidata-crawler`), which pull Wikidata facts into the shared MySQL/MariaDB database (`T_WC_*` tables); this repo closes the loop by pushing the resulting QIDs back onto TMDb. The repair list it consumes is computed off-site by the VPS-side `preprocess/` job from that same database.
 
-The canonical sibling-repo roster lives in `tmdb-front/doc/related-repositories/related-repositories.txt`.
+The canonical sibling-repo roster lives in `%USERPROFILE%/Nestor/projets/t2s-backlog/topics/related-repositories.txt`.
 
 ## Where things live (file → role)
 
