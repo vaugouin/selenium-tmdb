@@ -114,38 +114,50 @@ WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
 LIMIT 20;
 
 -- ---------------------------------------------------------------------------
--- 5. ⚠ UN DEFAUT PREEXISTANT, TROUVE EN MIGRANT ET DELIBEREMENT PAS CORRIGE.
+-- 5. ⚠ CE QUE LA CORRECTION DU PIEGE NULL AJOUTE, à lire AVANT de lancer le robot.
 --
---    Les trois requetes portent, cote a cote, ces deux conditions :
+--    Le script cherche DEUX choses, et son commentaire d'en-tete le dit desormais :
+--      1. une entite TMDb SANS identifiant Wikidata (absent, vide ou mal forme) ;
+--      2. une entite TMDb dont l'identifiant Wikidata est FAUX.
 --
---        AND WM.ID_WIKIDATA <> M1.ID_WIKIDATA
---        AND (M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = '' OR ... NOT REGEXP ...)
+--    Les deux conditions etaient reliees par ET, ce qui rendait le cas 1
+--    inatteignable des que l'identifiant valait NULL : NULL <> 'Q123' ne vaut pas
+--    vrai, il vaut NULL, et le WHERE rejette. Or la colonne accepte NULL. Le script
+--    ne servait donc que la moitie de son objet. Corrige en OU le 2026-09-01.
 --
---    La seconde prevoit EXPLICITEMENT le cas NULL. La premiere l'elimine : en SQL,
---    NULL <> 'Q123' ne vaut pas vrai, il vaut NULL, et le WHERE rejette la ligne.
---    L'export ne remonte donc JAMAIS les entites dont l'ID_WIKIDATA cote TMDb est
---    NULL, alors que ce sont precisement celles que la requete dit chercher. Seules
---    sortent les chaines vides et les valeurs mal formees.
---
---    C'est la troisieme fois que cette migration bute sur le meme piege : le 0
---    sentinelle du numero Criterion, le IS NOT NULL qui comptait les zeros, et
---    maintenant ceci. NULL n'est pas une valeur, c'est l'absence de valeur, et
---    toute comparaison avec lui rend NULL.
---
---    ⚠ POURQUOI JE NE LE CORRIGE PAS. Corriger ferait grossir la population d'un
---    robot qui ECRIT sur un site tiers, peut-etre beaucoup. C'est une decision de
---    Philippe, pas un effet de bord d'une migration. La requete ci-dessous chiffre
---    ce que la correction ajouterait, pour qu'il decide sur un nombre.
+--    ⚠ CETTE CORRECTION FAIT GROSSIR LA POPULATION D'UN ROBOT QUI ECRIT SUR TMDB.
+--    Les trois requetes ci-dessous chiffrent de combien, par entite. Si le nombre
+--    surprend, lancer Selenium sur un echantillon avant le lot complet.
 -- ---------------------------------------------------------------------------
-SELECT '5. Ce que corriger le piege NULL ajouterait a l export des films' AS SECTION;
+SELECT '5. Lignes qu ajoute la correction du piege NULL' AS SECTION;
 
 SET STATEMENT max_statement_time=180 FOR
-SELECT COUNT(*) AS LIGNES_AUJOURD_HUI_INVISIBLES
+SELECT 'films' AS ENTITE, COUNT(*) AS AJOUTEES
 FROM T_WC_WIKIDATA_MOVIE WM
 INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WM.ID_WIKIDATA
        AND si.ID_PROPERTY = 'P345'
        AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
 INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
 INNER JOIN T_WC_TMDB_MOVIE M1 ON imdb.VALUE_EXTERNAL_ID = M1.ID_IMDB
-WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
-  AND M1.ID_WIKIDATA IS NULL;
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%' AND M1.ID_WIKIDATA IS NULL;
+
+SET STATEMENT max_statement_time=180 FOR
+SELECT 'series' AS ENTITE, COUNT(*) AS AJOUTEES
+FROM T_WC_WIKIDATA_SERIE WS
+INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WS.ID_WIKIDATA
+       AND si.ID_PROPERTY = 'P345'
+       AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+INNER JOIN T_WC_TMDB_SERIE S1 ON imdb.VALUE_EXTERNAL_ID = S1.ID_IMDB
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%' AND S1.ID_WIKIDATA IS NULL;
+
+SET STATEMENT max_statement_time=180 FOR
+SELECT 'personnes' AS ENTITE, COUNT(*) AS AJOUTEES
+FROM T_WC_WIKIDATA_PERSON WP
+INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WP.ID_WIKIDATA
+       AND si.ID_PROPERTY = 'P345'
+       AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+INNER JOIN T_WC_TMDB_PERSON P1 ON imdb.VALUE_EXTERNAL_ID = P1.ID_IMDB
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'nm%' AND P1.ID_WIKIDATA IS NULL
+  AND WP.ID_WIKIDATA NOT IN ('Q11473776');

@@ -54,8 +54,26 @@ INNER JOIN T_WC_TMDB_PERSON P1 ON imdb.VALUE_EXTERNAL_ID = P1.ID_IMDB
 LEFT JOIN T_WC_TMDB_PERSON P2 ON WP.ID_WIKIDATA = P2.ID_WIKIDATA
 WHERE imdb.VALUE_EXTERNAL_ID IS NOT NULL AND imdb.VALUE_EXTERNAL_ID <> ''
 AND imdb.VALUE_EXTERNAL_ID LIKE 'nm%'
-AND WP.ID_WIKIDATA <> P1.ID_WIKIDATA
-AND (P1.ID_WIKIDATA IS NULL OR P1.ID_WIKIDATA = '' OR P1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$')
+/* LES DEUX CAS QUE CE SCRIPT CHERCHE, ecrits en OU et non en ET.
+   1. l'entite TMDb n'a PAS d'identifiant Wikidata : absent, vide ou mal forme ;
+   2. elle en a un, mais il ne correspond pas a celui que Wikidata donne.
+
+   ⚠ CORRIGE LE 2026-09-01. Les deux conditions etaient reliees par ET, ce qui
+   rendait le cas 1 inatteignable des que l'identifiant cote TMDb valait NULL :
+   NULL <> 'Q123' ne vaut pas vrai, il vaut NULL, et le WHERE rejette la ligne.
+   Le script ne trouvait donc que les chaines vides et les valeurs mal formees,
+   alors que la colonne accepte NULL (varchar(50) DEFAULT NULL). Il ne servait
+   que la moitie de son objet.
+
+   ⚠ CETTE CORRECTION FAIT GROSSIR LA POPULATION D'UN ROBOT QUI ECRIT SUR TMDB.
+   La section 5 de test-012-selenium-v1-v2.sql chiffre de combien : la lire
+   AVANT la premiere execution. */
+AND (
+     P1.ID_WIKIDATA IS NULL
+  OR P1.ID_WIKIDATA = ''
+  OR P1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$'
+  OR P1.ID_WIKIDATA <> WP.ID_WIKIDATA
+)
 AND WP.ID_WIKIDATA NOT IN ('Q11473776') 
 /*
 AND P1.ADULT = 0
