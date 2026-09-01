@@ -68,6 +68,30 @@ AND imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
    ⚠ CETTE CORRECTION FAIT GROSSIR LA POPULATION D'UN ROBOT QUI ECRIT SUR TMDB.
    La section 5 de test-012-selenium-v1-v2.sql chiffre de combien : la lire
    AVANT la premiere execution. */
+/* ⚠ GARDE 1 : ECARTER LES IDENTIFIANTS IMDb AMBIGUS, poses le 2026-09-01.
+   Mesure du jour : 15 films recevaient DEUX QID differents, parfois trois.
+   « 24 Hrs Ghost Story » (tt0118538) se voyait proposer Q123330581, Q123330582 et
+   Q123330588, trois identifiants consecutifs, donc des doublons crees en masse dans
+   Wikidata. Sans ce garde, le robot ecrirait les trois en sequence sur la meme fiche
+   TMDb et le dernier gagnerait au hasard de l'ordre de tri.
+   On ne peut pas decider a la place de Wikidata lequel est le bon : on n'ecrit pas. */
+AND NOT EXISTS (
+      SELECT 1
+      FROM T_WC_WIKIDATA_MOVIE w2
+      INNER JOIN T_WC_WIKIDATA_STATEMENT s2 ON s2.ID_WIKIDATA = w2.ID_WIKIDATA
+             AND s2.ID_PROPERTY = 'P345'
+             AND (s2.`RANK` IS NULL OR s2.`RANK` <> 'deprecated')
+      INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE e2 ON e2.ID_STATEMENT = s2.ID_STATEMENT
+      WHERE e2.VALUE_EXTERNAL_ID = imdb.VALUE_EXTERNAL_ID
+        AND w2.ID_WIKIDATA <> WM.ID_WIKIDATA )
+/* ⚠ GARDE 2 : NE PAS ECRASER UN IDENTIFIANT VALIDE DEJA POSE.
+   Mesure du jour : 20 201 lignes remplissent une case VIDE, 751 remplaceraient un
+   QID valide mais different. Les deux n'ont pas le meme risque : le premier n'ajoute
+   que de l'information, le second en detruit. Le remplacement est donc desactive par
+   defaut, le temps d'examiner les 751 cas.
+   POUR LES REACTIVER, retirer la ligne ci-dessous et relancer la section 6D de
+   test-012-selenium-v1-v2.sql pour verifier le compte. */
+AND (M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = '' OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$')
 AND (
      M1.ID_WIKIDATA IS NULL
   OR M1.ID_WIKIDATA = ''
