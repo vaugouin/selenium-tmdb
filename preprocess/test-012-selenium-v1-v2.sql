@@ -161,3 +161,94 @@ INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STA
 INNER JOIN T_WC_TMDB_PERSON P1 ON imdb.VALUE_EXTERNAL_ID = P1.ID_IMDB
 WHERE imdb.VALUE_EXTERNAL_ID LIKE 'nm%' AND P1.ID_WIKIDATA IS NULL
   AND WP.ID_WIKIDATA NOT IN ('Q11473776');
+
+-- ---------------------------------------------------------------------------
+-- 6. ⚠ LE VOLUME A EXPLOSÉ : contrôles à passer AVANT de lancer le robot.
+--
+--    Passage du 2026-09-01 : films 108 -> 20 214, séries 160 -> 2 839, personnes
+--    124 -> 11 544. La section 5 rendant 0, ce n'est pas la correction du piège NULL
+--    qui les produit, c'est la bascule elle-même : V2 connaît beaucoup plus
+--    d'entités que le crawl SPARQL de V1.
+--
+--    Mais un facteur 187 se vérifie avant de s'accepter, et deux causes possibles
+--    doivent être écartées, parce qu'elles produiraient le même symptôme :
+--      A. une entité Wikidata portant PLUSIEURS statements P345 : la jointure
+--         multiplie alors les lignes sans que l'export gagne un seul film ;
+--      B. plusieurs entités Wikidata partageant le MÊME identifiant IMDb : le robot
+--         écrirait alors deux QID différents sur la même fiche TMDb, en séquence,
+--         et le dernier gagnerait au hasard de l'ordre.
+--
+--    Ces deux cas sont pires que du volume : ce sont des écritures fausses sur un
+--    site tiers. Les deux requêtes ci-dessous les comptent.
+-- ---------------------------------------------------------------------------
+SELECT '6A. Films : lignes exportees contre films distincts (les deux doivent etre egaux)' AS SECTION;
+
+SET STATEMENT max_statement_time=180 FOR
+SELECT COUNT(*) AS LIGNES, COUNT(DISTINCT M1.ID_MOVIE) AS FILMS_DISTINCTS
+FROM T_WC_WIKIDATA_MOVIE WM
+INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WM.ID_WIKIDATA
+       AND si.ID_PROPERTY = 'P345'
+       AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+INNER JOIN T_WC_TMDB_MOVIE M1 ON imdb.VALUE_EXTERNAL_ID = M1.ID_IMDB
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
+  AND ( M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = ''
+     OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$' OR M1.ID_WIKIDATA <> WM.ID_WIKIDATA );
+
+SELECT '6B. Films recevant DEUX QID differents : le robot ecrirait au hasard (attendu : 0)' AS SECTION;
+
+SET STATEMENT max_statement_time=180 FOR
+SELECT COUNT(*) AS FILMS_AMBIGUS FROM (
+  SELECT M1.ID_MOVIE
+  FROM T_WC_WIKIDATA_MOVIE WM
+  INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WM.ID_WIKIDATA
+         AND si.ID_PROPERTY = 'P345'
+         AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+  INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+  INNER JOIN T_WC_TMDB_MOVIE M1 ON imdb.VALUE_EXTERNAL_ID = M1.ID_IMDB
+  WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
+    AND ( M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = ''
+       OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$' OR M1.ID_WIKIDATA <> WM.ID_WIKIDATA )
+  GROUP BY M1.ID_MOVIE
+  HAVING COUNT(DISTINCT WM.ID_WIKIDATA) > 1 ) a;
+
+SELECT '6C. Dix films ambigus, s il y en a : a regarder un par un' AS SECTION;
+
+SET STATEMENT max_statement_time=180 FOR
+SELECT M1.ID_MOVIE, M1.TITLE, M1.ID_IMDB,
+       GROUP_CONCAT(DISTINCT WM.ID_WIKIDATA ORDER BY WM.ID_WIKIDATA) AS QID_CANDIDATS
+FROM T_WC_WIKIDATA_MOVIE WM
+INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WM.ID_WIKIDATA
+       AND si.ID_PROPERTY = 'P345'
+       AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+INNER JOIN T_WC_TMDB_MOVIE M1 ON imdb.VALUE_EXTERNAL_ID = M1.ID_IMDB
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
+  AND ( M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = ''
+     OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$' OR M1.ID_WIKIDATA <> WM.ID_WIKIDATA )
+GROUP BY M1.ID_MOVIE, M1.TITLE, M1.ID_IMDB
+HAVING COUNT(DISTINCT WM.ID_WIKIDATA) > 1
+LIMIT 10;
+
+SELECT '6D. Quelle part des 20 214 est une CORRECTION et non un ajout' AS SECTION;
+
+-- Un film qui portait deja un QID valide mais DIFFERENT est un cas plus delicat :
+-- le robot va ecraser une valeur existante. Les distinguer permet de commencer par
+-- les ajouts, qui ne detruisent rien, et de traiter les remplacements ensuite.
+SET STATEMENT max_statement_time=180 FOR
+SELECT CASE
+         WHEN M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = '' THEN 'AJOUT (case vide)'
+         WHEN M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$' THEN 'AJOUT (valeur mal formee)'
+         ELSE 'REMPLACEMENT (QID valide mais different)'
+       END AS NATURE,
+       COUNT(DISTINCT M1.ID_MOVIE) AS FILMS
+FROM T_WC_WIKIDATA_MOVIE WM
+INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WM.ID_WIKIDATA
+       AND si.ID_PROPERTY = 'P345'
+       AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
+INNER JOIN T_WC_TMDB_MOVIE M1 ON imdb.VALUE_EXTERNAL_ID = M1.ID_IMDB
+WHERE imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
+  AND ( M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = ''
+     OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$' OR M1.ID_WIKIDATA <> WM.ID_WIKIDATA )
+GROUP BY NATURE;
