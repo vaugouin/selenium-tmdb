@@ -9,7 +9,18 @@
 -- d'autres. La regle est donc : lire les ecarts AVANT de lancer Selenium, jamais
 -- apres.
 --
--- ⚠ COLLATION. Lancer avec --force.
+-- ⚠ CE FICHIER NE DOIT PAS VIVRE DANS preprocess/, et il y a ete depose par erreur
+-- le 2026-09-01. Ce dossier n'est pas de la documentation, il est EXECUTE : le
+-- conteneur y parcourt tous les .sql, lance chacun par un unique cursor.execute() et
+-- ecrit le resultat en CSV. Une recette qui enchaine plusieurs instructions y produit
+-- l'erreur 1064, et comme le try englobe toute la boucle, elle emporte les trois
+-- exports avec elle. Passage du 2026-09-02 : aucun CSV produit.
+--
+-- La lecon vaut au-dela de ce fichier : avant de deposer quoi que ce soit dans un
+-- dossier, verifier ce que ce dossier FAIT. J'avais suppose « preprocess » = scripts
+-- de reference, il voulait dire « scripts executes chaque matin ».
+--
+-- ⚠ COLLATION. Lancer avec --force. Et le lancer A LA MAIN, jamais par le conteneur.
 -- ============================================================================
 
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
