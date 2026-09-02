@@ -15,8 +15,14 @@ La requete lisait T_WC_WIKIDATA_SERIE_V1, ou ID_WIKIDATA, ID_IMDB et l'identifia
 dans trois colonnes de la meme ligne. En V2 les deux identifiants externes sont des
 STATEMENTS, P345 pour IMDb et P4983 pour TMDb. D'ou une table d'entite et deux
 jointures. L'identifiant IMDb est en INNER JOIN, il est la cle du rapprochement ;
-celui de TMDb en LEFT JOIN, la colonne V1 etait souvent vide et le CSV l'exporte a
-titre indicatif.
+celui de TMDb en sous-requete scalaire.
+
+⚠ POURQUOI UNE SOUS-REQUETE ET NON UNE JOINTURE, corrige le 2026-09-02. En LEFT JOIN,
+une entite portant DEUX statements TMDb produisait DEUX lignes pour le meme film, avec
+le meme QID a ecrire : 46 doublons dans l'export du jour. Un SELECT DISTINCT n'y
+pouvait rien, puisqu'il porte sur la ligne entiere et que c'est justement cette colonne
+qui differait. La sous-requete rend UNE valeur, choisie par le rang puis l'ordre des
+claims, et le DISTINCT devient un filet plutot qu'un remede.
 
 Le rang 'deprecated' est ecarte : Wikidata tient ces valeurs pour fausses, et il
 serait malvenu d'aller les recopier sur TMDb.
@@ -26,11 +32,17 @@ parcourt tous les .sql voisins et lance chacun par un UNIQUE cursor.execute(). N
 jamais y enchainer plusieurs instructions, ne jamais deposer ici un fichier qui n'est
 pas destine a s'executer. Voir AGENTS.md, section « SQL files ».
 */
-SELECT
+SELECT DISTINCT
 S1.ID_SERIE AS ID_SERIE,
 WS.ID_WIKIDATA AS ID_WIKIDATA,
 imdb.VALUE_EXTERNAL_ID AS ID_IMDB,
-tmdb.VALUE_EXTERNAL_ID AS ID_WIKIDATA_SERIE,
+( SELECT ev.VALUE_EXTERNAL_ID
+  FROM T_WC_WIKIDATA_STATEMENT sv
+  INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE ev ON ev.ID_STATEMENT = sv.ID_STATEMENT
+  WHERE sv.ID_WIKIDATA = WS.ID_WIKIDATA AND sv.ID_PROPERTY = 'P4983'
+    AND (sv.`RANK` IS NULL OR sv.`RANK` <> 'deprecated')
+  ORDER BY (sv.`RANK` = 'preferred') DESC, sv.ID_STATEMENT ASC
+  LIMIT 1 ) AS ID_WIKIDATA_SERIE,
 S1.ID_WIKIDATA AS ID_TMDB_WIKIDATA,
 S1.TITLE AS TITLE,
 S1.ADULT AS ADULT,
@@ -40,10 +52,6 @@ INNER JOIN T_WC_WIKIDATA_STATEMENT si ON si.ID_WIKIDATA = WS.ID_WIKIDATA
        AND si.ID_PROPERTY = 'P345'
        AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
 INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE imdb ON imdb.ID_STATEMENT = si.ID_STATEMENT
-LEFT JOIN T_WC_WIKIDATA_STATEMENT st ON st.ID_WIKIDATA = WS.ID_WIKIDATA
-      AND st.ID_PROPERTY = 'P4983'
-      AND (st.`RANK` IS NULL OR st.`RANK` <> 'deprecated')
-LEFT JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE tmdb ON tmdb.ID_STATEMENT = st.ID_STATEMENT
 INNER JOIN T_WC_TMDB_SERIE S1 ON imdb.VALUE_EXTERNAL_ID = S1.ID_IMDB
 LEFT JOIN T_WC_TMDB_SERIE S2 ON WS.ID_WIKIDATA = S2.ID_WIKIDATA
 /* ⚠ GARDE 1 : ECARTER LES IDENTIFIANTS IMDb AMBIGUS.
