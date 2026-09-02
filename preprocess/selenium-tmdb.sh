@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the folder path and file name
-FOLDER_PATH="/home/debian/docker/selenium-tmdb"
+FOLDER_PATH="/home/debian/docker/selenium-tmdb/preprocess"
 ENV_FILE="${FOLDER_PATH}/.env"
 
 # Check if the selenium-tmdb Docker container is running
