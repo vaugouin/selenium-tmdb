@@ -75,16 +75,33 @@ Consult it before implementing: tasks are `SELENIUM-TMDB-NNN` with status (done 
 todo), priority, and quick-wins. NOTE: these are local paths on Philippe's PC and do not
 resolve on the VPS or on cloud agents (claude.ai/code).
 
-## SQL files live in `doc/sql/`
+## SQL files live at the root, and never in `preprocess/` unless they are meant to run
 
-Stack-wide convention, set 2026-08-20. Every **read-only** `.sql` of this repo, audit
-queries, monitoring queries, exports, reference DDL dumps, lives in `doc/sql/`, never
-at the root and never in a `doc/queries/` of its own.
+**Philippe's decision, 2026-09-02, and it overrides the stack-wide convention for this
+repo.** The `.sql` files here are part of the repo's code, not its documentation, so they
+live **at the root**. Do not create a `doc/sql/` here, and do not move them into one.
+
+The stack-wide convention set on 2026-08-20 puts read-only `.sql` in `doc/sql/` across the
+other repos, never at the root. This repo is the exception, deliberately.
+
+**The rule that does not bend is about `preprocess/`, and it broke a run twice.**
+
+On 2026-08-20, `.sql` files were moved OUT of `preprocess/` and the run produced nothing.
+On 2026-09-02, a recipe file was moved INTO `preprocess/` and the run produced nothing
+either: it raised error 1064 and, the `try` wrapping the whole loop, took the three real
+exports down with it. Both failures are the same failure, read from opposite ends.
+
+Before putting anything in a folder, establish what that folder **does**. Here,
+`preprocess` does not mean "reference scripts", it means "scripts executed every morning".
+The second incident happened because this very section was not read first, though it said
+so already.
 
 **This repo currently has no `doc/sql/`, and that is correct.** Its only three `.sql`
 files, `wikidata-id-movie-fix.sql`, `wikidata-id-serie-fix.sql` and
 `wikidata-id-person-fix.sql`, are **executed** by process 1 of `preprocess/selenium-tmdb.py`,
-so they fall under the first exception below and stay in `preprocess/`.
+so they fall under the first exception below and stay in `preprocess/`. Every other
+`.sql` of this repo lives at the root, `test-012-selenium-v1-v2.sql` included: it is a
+recipe, it chains several statements, and a single `cursor.execute()` cannot run it.
 
 The trap is worth spelling out, because it cost a broken run on 2026-08-20. That process
 does not name the files: it does `sorted(Path(__file__).resolve().parent.glob("*.sql"))`
