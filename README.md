@@ -199,8 +199,12 @@ three entity types in a single pass:
    `get_latest_csv`, `set_wikidata_id`, `clear_wikidata_id`, `process_dataset`,
    etc.
 4. **Cell 4** — downloads new CSVs for every dataset, then launches Chrome and
-   logs into TMDB.
-5. **Cell 5** — runs `process_dataset` for movies, series, then persons.
+   logs into TMDB, declining the cookie banner on the way (it is anchored over
+   the Save button).
+5. **Cell 5** — runs `process_dataset` for movies, series, then persons. Each
+   call returns the driver it ends up using and the cell rebinds it
+   (`driver = process_dataset(driver, ...)`), because a crashed Chrome is
+   replaced mid-run by a fresh, logged-in one.
 6. **Last cell** — navigates Chrome back to the home page when done.
 
 ### Entity-specific notebooks
@@ -222,6 +226,68 @@ Each iteration writes the last processed ID to the IPython store:
 
 Re-running cell 2 of the legacy notebooks (or restarting the unified notebook)
 loads the cursor with `%store -r` and the loop skips everything already done.
+
+### When Chrome crashes
+
+Long runs lose the browser in two ways, and they do not look alike.
+
+A hard crash makes the next Selenium command raise: `tab crashed`, `invalid
+session id`, `chrome not reachable`, or, when chromedriver simply stops
+answering, a raw `ReadTimeoutError: HTTPConnectionPool(host='localhost',
+port=...)`.
+
+A renderer that runs out of memory raises nothing at all. Chrome replaces the
+page with its own "Aw, Snap!" document, `driver.get()` returns normally and every
+command keeps working, so a loop watching only for exceptions walks the rest of
+the CSV finding no `wikidata_id` field, writing nothing and advancing the cursor
+past every record it touches. A run on 2026-09-04 did exactly that for ten
+minutes before it was noticed.
+
+The notebook handles both:
+
+- `get_chrome_error_code()` recognises Chrome's own error page: `document.URL`
+  becomes `chrome-error://chromewebdata/` (while `driver.current_url` still
+  reports the URL that was requested), the body class is `neterror`, and the page
+  displays the code (`Out of Memory`, `ERR_NAME_NOT_RESOLVED`). `open_page()`
+  raises `BrowserSessionLost` on such a page instead of returning, so the record
+  is retried on a fresh browser rather than skipped.
+- `is_browser_gone()` covers the hard crash: invalid session, chrome not
+  reachable, tab crashed, any urllib3 read timeout. Ordinary Selenium errors, a
+  missing element or a slow page, still propagate untouched.
+- Either way the record is retried on a fresh Chrome, up to
+  `BROWSER_RESTART_ATTEMPTS` (3) times. `restart_browser()` closes the old
+  session, killing chromedriver if `quit()` hangs, starts a new driver and logs
+  back into TMDB. Solve the CAPTCHA in the new window if TMDB shows one.
+- A TMDB session that expired silently is handled the same way: the edit page
+  redirects to the login form, which raises `BrowserSessionLost` instead of
+  counting the record as processed.
+- As a backstop, `MAX_CONSECUTIVE_SKIPS` (8) records in a row writing nothing
+  restarts the browser once, and stops the run if it happens again. Over the 1061
+  records of the run before that incident, 1046 were written and the longest run
+  without a write was 1, so the threshold sits far above normal.
+- The client timeout is 60 s and the page load timeout 45 s, so a dead browser is
+  noticed in one minute instead of two, and a merely slow page raises an ordinary
+  `TimeoutException`.
+- When every attempt fails the run stops, the stored cursor still pointing at the
+  last record actually written, so re-running the cell resumes there.
+
+### Keeping Chrome from running out of memory
+
+Every TMDB page is same-site, so Chrome serves the whole run from a single
+renderer whose memory only grows. Measured over the same 12 navigations:
+
+| Chrome as configured | renderer RSS | growth |
+| --- | --- | --- |
+| default flags | 310 to 502 MB | 16 MB per page |
+| `--disable-features=BackForwardCache` | 290 to 398 MB | 9 MB per page |
+| the same, plus the memory purge | 300 to 352 MB | 4.3 MB per page |
+
+The notebook applies both. `build_chrome_options()` turns off the back/forward
+cache, which otherwise keeps every previous page alive inside that one renderer,
+and `purge_browser_memory()` sends `Memory.forciblyPurgeJavaScriptMemory` between
+records. Neither reclaims everything, so `BROWSER_RECYCLE_EVERY` (250) restarts
+the browser regularly on top of them. Raise it if the extra logins get in the
+way, set it to `0` to turn recycling off.
 
 ---
 
@@ -276,8 +342,31 @@ This file is git-ignored (`*.log`) and can be tailed during a run.
   (see [preprocess/README.md](preprocess/README.md)) and that `SFTP_FOLDER` is
   correct.
 - **TMDB login loops / CAPTCHA** — TMDB occasionally challenges the headed
-  Chrome session. Solve it manually in the open window; the notebook keeps
-  running once the form is submitted.
+  Chrome session. Solve it manually in the open window; the login waits for the
+  browser to leave `/login`, prints a reminder while the challenge is pending
+  and carries on as soon as it is solved.
+- **`ReadTimeoutError: HTTPConnectionPool(host='localhost', port=...)`**: Chrome
+  or chromedriver died under the loop. The notebook restarts the browser, logs
+  back in and retries the record by itself, up to three times, as described in
+  [When Chrome crashes](#when-chrome-crashes). If it gives up, the `%store`
+  cursor still points at the last record written and re-running the cell resumes
+  there.
+- **Chrome shows "Aw, Snap!" / "Aïe aïe aïe" with `Out of Memory`**: the renderer
+  exhausted its memory. Nothing raises in that state, which is why the notebook
+  recognises the error page itself, restarts Chrome and retries the record. See
+  [Keeping Chrome from running out of memory](#keeping-chrome-from-running-out-of-memory)
+  for what makes it rarer.
+- **Records skipped in bulk, nothing written**: the run stops by itself after 8
+  records in a row write nothing. Check in the browser whether TMDB is showing an
+  error page, a rate limit or a login form, then resume from the stored cursor.
+- **Save seems to do nothing, or `ElementClickInterceptedException`**: TMDB's
+  OneTrust cookie banner is anchored at the bottom of the window, right over the
+  Save button of an edit page, and it takes the click. `login_tmdb()` clicks
+  **Tout refuser** (`#onetrust-reject-all-handler`) on every fresh browser, which
+  sets `OptanonAlertBoxClosed` for that profile; `click_save_button()` dismisses
+  it and retries if a click is intercepted anyway, falling back to a scripted
+  click. Since each restart starts from a clean profile, the banner is declined
+  again every time.
 - **"Element 'Locked' exists on the page."** — the `wikidata_id` field is
   locked by a TMDB moderator. The script intentionally skips it; no action
   needed.

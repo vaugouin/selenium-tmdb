@@ -3,12 +3,19 @@ Retrieve all movies with empty or wrong ID_WIKIDATA in T_WC_TMDB_MOVIE
 when Wikidata knows the entity, matching on ID_IMDB.
 CSV export of this query is later used for fix of TMDb records using python and Selenium
 
-CE QUE CE SCRIPT CHERCHE, deux choses et non une :
-  1. une entite TMDb SANS identifiant Wikidata : absent, vide ou mal forme ;
-  2. une entite TMDb dont l'identifiant Wikidata est FAUX.
-Les deux etaient relies par ET jusqu'au 2026-09-01, ce qui rendait le cas 1
+CE QUE CE SCRIPT CHERCHE : une entite TMDb SANS identifiant Wikidata utilisable,
+c'est-a-dire absent, vide, ou present mais mal forme (« Q4157228) », « 116973523 »
+sans son Q, mesures dans l'export du 2026-09-03). Remplir, jamais remplacer.
+
+Le cas voisin, l'entite dont l'identifiant est un QID valide mais FAUX, a quitte ce
+fichier le 2026-09-05 pour wikidata-id-movie-replace.sql. Ecrire par-dessus une valeur
+valide detruit de l'information sur un site tiers, et demande une preuve que remplir
+une case vide ne demande pas : les deux ne peuvent pas partager le meme fichier ni le
+meme passage du robot.
+
+Les deux cas etaient relies par ET jusqu'au 2026-09-01, ce qui rendait le premier
 inatteignable des que l'identifiant valait NULL, NULL <> 'Q123' valant NULL et non
-vrai. Corrige en OU.
+vrai. Corrige en OU le 2026-09-01, puis separe en deux fichiers le 2026-09-05.
 
 MIGRATION WIKIDATA V1 VERS V2, 2026-09-01.
 La requete lisait T_WC_WIKIDATA_MOVIE_V1, ou ID_WIKIDATA, ID_IMDB et l'identifiant TMDb vivaient
@@ -84,20 +91,31 @@ LEFT JOIN (
 WHERE imdb.VALUE_EXTERNAL_ID IS NOT NULL AND imdb.VALUE_EXTERNAL_ID <> ''
 AND imdb.VALUE_EXTERNAL_ID LIKE 'tt%'
 AND amb.AMBIGU IS NULL
-/* ⚠ GARDE 2 : NE PAS ECRASER UN IDENTIFIANT VALIDE DEJA POSE.
+/* ⚠ GARDE 2 : CE FICHIER NE REMPLIT QUE LES CASES VIDES OU ILLISIBLES.
    Mesure du 2026-09-01 : 20 201 lignes remplissent une case VIDE, 751 remplaceraient
    un QID valide mais different. Les deux n'ont pas le meme risque, le premier
-   n'ajoute que de l'information, le second en detruit. Le remplacement est desactive
-   par defaut, le temps d'examiner les 751 cas. POUR LES REACTIVER, retirer la ligne
-   ci-dessous et relancer la section 6D de test-012-selenium-v1-v2.sql. */
+   n'ajoute que de l'information, le second en detruit, sur un site tiers et par un
+   robot qui ne relit rien.
+
+   NE PAS RETIRER CETTE LIGNE POUR RECUPERER LES REMPLACEMENTS. Ils vivent depuis le
+   2026-09-05 dans wikidata-id-movie-replace.sql, qui applique en plus un garde 3 :
+   n'exporter un remplacement que si le QID candidat designe lui-meme cette fiche TMDb
+   en P4947. Mesure du 2026-09-05 sur les films, sur 752 remplacements possibles,
+   659 sont ainsi corrobores, 73 sans preuve et 20 contredits par Wikidata. Retirer la
+   ligne ci-dessous ferait entrer ces 93 la sans le moindre garde-fou.
+
+   Les deux populations sont disjointes par construction, leur reunion est celle que
+   la requete d'origine visait. */
 AND (M1.ID_WIKIDATA IS NULL OR M1.ID_WIKIDATA = '' OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$')
-/* Les deux cas cherches, en OU. */
-AND (
-     M1.ID_WIKIDATA IS NULL
-  OR M1.ID_WIKIDATA = ''
-  OR M1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$'
-  OR M1.ID_WIKIDATA <> WM.ID_WIKIDATA
-)
+/* ⚠ LE BLOC « les deux cas cherches, en OU » A ETE RETIRE LE 2026-09-05, et son
+   absence vaut d'etre expliquee, faute de quoi quelqu'un le remettra.
+
+   Il testait ( IS NULL OR = '' OR mal forme OR <> WM.ID_WIKIDATA ). Le garde 2
+   ci-dessus implique deja ses trois premieres branches, et exclut la quatrieme :
+   une valeur qui differe sans etre ni vide ni mal formee est un QID valide, donc
+   deja ecartee. Le bloc etait donc entierement mort, mais il se lisait comme si ce
+   fichier traitait encore le cas de la valeur fausse. C'est desormais le role de
+   wikidata-id-movie-replace.sql. */
 /*
 AND M1.ADULT = 0
  */

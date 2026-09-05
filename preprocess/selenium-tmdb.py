@@ -1,3 +1,4 @@
+import sys
 import time
 import citizenphil as cp
 import pymysql
@@ -9,6 +10,10 @@ strprocessesexecuteddesc = "List of processes executed in the Selenium TMDb prep
 cp.f_setservervariable("strseleniumtmdbprocessesexecutedprevious",strprocessesexecutedprevious,strprocessesexecuteddesc + " (previous execution)",0)
 strprocessesexecuted = ""
 cp.f_setservervariable("strseleniumtmdbprocessesexecuted",strprocessesexecuted,strprocessesexecuteddesc,0)
+
+# Vrai des qu'un fichier .sql a echoue, alors meme que les autres sont passes.
+# Un succes partiel n'est pas un succes : le code de retour doit le dire.
+blnfailed = False
 
 try:
     conn = cp.f_getconnection()
@@ -59,44 +64,84 @@ try:
                     print(f"Found {len(arrsqlfiles)} .sql files")
                     lngcount = 0
 
+                    # UN try PAR FICHIER, ET NON UN SEUL POUR TOUTE LA BOUCLE.
+                    #
+                    # Le try unique de la ligne 13 enveloppait cette boucle entiere. Un
+                    # fichier en erreur emportait donc tous ceux qui le suivaient, et
+                    # l'ordre est alphabetique : le 2026-09-02, un fichier depose ici par
+                    # erreur a leve un 1064 et pris avec lui les trois vrais exports. Le
+                    # 2026-09-05, l'arrivee des trois requetes -replace a double le nombre
+                    # de fichiers, donc double cette exposition, d'ou ce decoupage.
+                    #
+                    # On rattrape Exception et non la seule pymysql.MySQLError : un export
+                    # echoue aussi sur un disque plein ou un droit d'ecriture, et ces
+                    # causes-la ne doivent pas davantage faire tomber les voisins.
+                    arrfailures = []
                     for sqlfilepath in arrsqlfiles:
                         sqlbasename = sqlfilepath.stem
                         outdir = strscriptdir / sqlbasename
                         outdir.mkdir(parents=True, exist_ok=True)
                         outfilepath = outdir / f"{sqlbasename}-{strdate}.csv"
+                        # ⚠ ECRITURE EN DEUX TEMPS, et c'est la moitie serieuse du
+                        # decoupage. Sans elle, une erreur survenue pendant l'ecriture
+                        # laisserait sous le nom attendu un CSV tronque, que le carnet
+                        # choisirait comme etant le plus recent et donnerait tel quel au
+                        # robot. Le fichier ne prend son nom definitif qu'une fois complet ;
+                        # en cas d'echec, l'export de la veille reste le dernier valide,
+                        # ce qui est le comportement souhaitable.
+                        partialpath = outdir / f"{sqlbasename}-{strdate}.csv.partial"
 
-                        with open(sqlfilepath, "r", encoding="utf-8") as fsql:
-                            strsql = fsql.read().strip()
+                        try:
+                            with open(sqlfilepath, "r", encoding="utf-8") as fsql:
+                                strsql = fsql.read().strip()
 
-                        if strsql == "":
+                            if strsql == "":
+                                continue
+
+                            print(f"Executing: {sqlfilepath.name}")
+                            cursor.execute(strsql)
+                            results = cursor.fetchall()
+
+                            arrcolumns = []
+                            if cursor.description is not None:
+                                arrcolumns = [col[0] for col in cursor.description]
+
+                            with open(partialpath, "w", newline="", encoding="utf-8") as fcsv:
+                                def f_csv_escape_value(val):
+                                    if val is None:
+                                        return "NULL"
+                                    sval = str(val)
+                                    sval = sval.replace('"', '""')
+                                    return f'"{sval}"'
+
+                                if arrcolumns:
+                                    fcsv.write(";".join([f_csv_escape_value(col) for col in arrcolumns]) + "\n")
+
+                                for row in results:
+                                    if isinstance(row, dict):
+                                        vals = [row.get(col) for col in arrcolumns]
+                                    else:
+                                        vals = list(row)
+
+                                    fcsv.write(";".join([f_csv_escape_value(v) for v in vals]) + "\n")
+
+                            partialpath.replace(outfilepath)
+                            print(f"  {outfilepath.name}: {len(results)} rows")
+                        except Exception as e:
+                            # ASCII SEUL DANS CE BLOC, ET CE N'EST PAS DU PURISME. Un
+                            # print qui leve ici tuerait la boucle qu'il est cense sauver :
+                            # sur une console latin-1, print('❌') leve un
+                            # UnicodeEncodeError depuis le gestionnaire d'exception lui-meme.
+                            # Vu en test le 2026-09-05. Le conteneur est en UTF-8, mais un
+                            # bloc de rattrapage ne doit dependre d'aucune hypothese.
+                            arrfailures.append(f"{sqlfilepath.name}: {type(e).__name__}: {e}")
+                            print(f"ERROR: {sqlfilepath.name} failed: {type(e).__name__}: {e}")
+                            print("   Other .sql files still run. Previous export kept.")
+                            try:
+                                partialpath.unlink(missing_ok=True)
+                            except Exception:
+                                pass
                             continue
-
-                        print(f"Executing: {sqlfilepath.name}")
-                        cursor.execute(strsql)
-                        results = cursor.fetchall()
-
-                        arrcolumns = []
-                        if cursor.description is not None:
-                            arrcolumns = [col[0] for col in cursor.description]
-
-                        with open(outfilepath, "w", newline="", encoding="utf-8") as fcsv:
-                            def f_csv_escape_value(val):
-                                if val is None:
-                                    return "NULL"
-                                sval = str(val)
-                                sval = sval.replace('"', '""')
-                                return f'"{sval}"'
-
-                            if arrcolumns:
-                                fcsv.write(";".join([f_csv_escape_value(col) for col in arrcolumns]) + "\n")
-
-                            for row in results:
-                                if isinstance(row, dict):
-                                    vals = [row.get(col) for col in arrcolumns]
-                                else:
-                                    vals = list(row)
-
-                                fcsv.write(";".join([f_csv_escape_value(v) for v in vals]) + "\n")
 
                         lngcount += 1
                         cp.f_setservervariable(
@@ -107,6 +152,24 @@ try:
                         )
                         strnow = datetime.now(cp.paris_tz).strftime("%Y-%m-%d %H:%M:%S")
                         cp.f_setservervariable("strseleniumtmdbdatetime",strnow,"Date and time of the last crawled record using the YTS API",0)
+
+                    # LE BILAN, parce qu'un run qui continue apres une erreur doit dire
+                    # laquelle. Sans cette variable serveur, la seule trace serait dans
+                    # les journaux du conteneur, qui est en --rm.
+                    cp.f_setservervariable(
+                        "strseleniumtmdbprocess" + str(intindex) + strdescvarname + "failures",
+                        " | ".join(arrfailures) if arrfailures else "",
+                        "SQL files that failed during process " + str(intindex) + " : " + strdesc + "",
+                        0,
+                    )
+                    if arrfailures:
+                        blnfailed = True
+                        print(f"WARNING: {len(arrfailures)} of {len(arrsqlfiles)} .sql file(s) failed:")
+                        for strfailure in arrfailures:
+                            print(f"    {strfailure}")
+                        print(f"  {lngcount} export(s) written all the same.")
+                    else:
+                        print(f"All {lngcount} .sql file(s) exported.")
             strsql = ""
             strcurrentprocess = ""
             cp.f_setservervariable("strseleniumtmdbcurrentprocess",strcurrentprocess,"Current process in the Selenium TMDb preprocess",0)
@@ -119,9 +182,20 @@ try:
             readable_duration = cp.convert_seconds_to_duration(strtotalruntime)
             cp.f_setservervariable("strseleniumtmdbtotalruntime",readable_duration,strtotalruntimedesc,0)
             print(f"Total runtime: {strtotalruntime} seconds ({readable_duration})")
-    print("Process completed")
+    if blnfailed:
+        print("Process completed WITH FAILURES (see above). Exit code 1.")
+    else:
+        print("Process completed")
 except pymysql.MySQLError as e:
     print(f"❌ MySQL Error: {e}")
     conn = getattr(cp, "connectioncp", None)
     if conn is not None and getattr(conn, "open", False):
         conn.rollback()
+    blnfailed = True
+
+# Le code de retour. Le conteneur tourne en --rm et personne ne le lit aujourd'hui
+# (selenium-tmdb.sh lance en detache sans attendre), mais un run qui a perdu un export
+# sur six ne doit pas se declarer bon : le jour ou quelqu'un branchera un docker wait,
+# il aura la verite plutot qu'un zero de politesse.
+if blnfailed:
+    sys.exit(1)
