@@ -30,6 +30,7 @@ local_chromadb_topics_en/
 
 # Logs
 *.log
+logs/
 
 # IDE
 .idea/

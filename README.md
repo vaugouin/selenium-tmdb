@@ -54,7 +54,8 @@ drive a real Chrome session to apply the fix.
 | [selenium-tmdb-wikidata_id-series01.ipynb](selenium-tmdb-wikidata_id-series01.ipynb) | Standalone notebook for TV series. |
 | [selenium-tmdb-wikidata_id-persons01.ipynb](selenium-tmdb-wikidata_id-persons01.ipynb) | Standalone notebook for persons. |
 | [preprocess/](preprocess/) | Dockerised VPS-side job that produces the CSV input. See its own [README](preprocess/README.md). |
-| [data/](data/) | Downloaded CSVs + `selenium-tmdb-wikidata_id.log` (git-ignored). |
+| [data/](data/) | Downloaded CSVs (git-ignored). |
+| [logs/](logs/) | JSON Lines trace of every wikidata_id write, one file per day (git-ignored). |
 | [doc/](doc/) | Reserved for additional documentation. |
 | [requirements.txt](requirements.txt) | Python dependencies for the notebooks. |
 | [.env.example](.env.example) | Template for the local `.env` file. |
@@ -312,14 +313,46 @@ produces these rows.
 
 ## Logs
 
-The unified notebook appends one line per successful update to
-`data/selenium-tmdb-wikidata_id.log`:
+The unified notebook writes one **JSON object per line** (JSON Lines) to a file
+per day, `logs/selenium-tmdb-wikidata_id-YYYYMMDD.log`. The folder is created on
+first write and is git-ignored.
 
-```
-<entity>;<tmdb_id>;<wikidata_id>
+The unit of the trace is the **write attempt**, not the successful write: a
+record TMDB refuses (locked field, 404, missing English translation, save not
+confirmed) gets its line too, which is what makes a run readable afterwards.
+
+```json
+{"schema":1,"ts":"2026-09-14T18:32:07.412+02:00","run_id":"20260914T163021Z-a3f1c2","event":"wikidata_id_write","action":"set","outcome":"success","reason":null,"dataset":"movies","mode":"fix","entity":"movie","tmdb_id":300115,"wikidata_id":"Q644554","previous_wikidata_id":null,"changed":true,"url":"https://www.themoviedb.org/movie/300115/edit?active_nav_item=external_ids","csv_file":"wikidata-id-movie-fix-20260913.csv","csv_row":42,"attempt":1,"duration_ms":4210}
 ```
 
-This file is git-ignored (`*.log`) and can be tailed during a run.
+| Field | Meaning |
+| --- | --- |
+| `event` | `wikidata_id_write`, or the `dataset_start` / `dataset_end` pair that frames each dataset and carries the row count and the final counters. |
+| `action` | `set`, or `clear` when a QID is erased from a conflicting record before the fix. |
+| `outcome` | `success`, `skipped` (TMDB refused the record) or `failed` (the write was attempted and did not stick). |
+| `reason` | `page_load_timeout`, `page_not_found`, `translation_failed`, `field_not_found`, `locked`, `field_not_editable`, `field_write_refused`, `save_not_confirmed`, `session_lost`. Null on success. |
+| `mode` | `fix` or `replace`, from the `DATASETS` entry. |
+| `previous_wikidata_id` | The value on the page before the field was cleared. On a `replace` run, the only record of what was overwritten. |
+| `changed` | True only when a success actually altered the value. |
+| `csv_file` / `csv_row` | The export and row the record came from. |
+| `attempt` | Browser-restart retry number, so one record retried is not read as two. |
+| `run_id` | Minted when the helpers cell runs; groups the lines of one session across the six datasets. |
+
+Reading it back:
+
+```bash
+# every real modification of the day
+jq -c 'select(.event=="wikidata_id_write" and .outcome=="success" and .changed)' logs/*.log
+# why records were refused, most frequent first
+jq -r 'select(.event=="wikidata_id_write" and .outcome!="success") | .reason' logs/*.log | sort | uniq -c | sort -rn
+# what a replace run overwrote
+jq -r 'select(.mode=="replace" and .outcome=="success") | [.tmdb_id,.previous_wikidata_id,.wikidata_id] | @tsv' logs/*.log
+```
+
+Writing the log never aborts a run: a failure to write is printed and swallowed.
+
+`data/selenium-tmdb-wikidata_id.log`, the previous `<entity>;<tmdb_id>;<wikidata_id>`
+file, is no longer written. It recorded successes only. Its history stays on disk.
 
 ---
 
@@ -356,6 +389,14 @@ This file is git-ignored (`*.log`) and can be tailed during a run.
   recognises the error page itself, restarts Chrome and retries the record. See
   [Keeping Chrome from running out of memory](#keeping-chrome-from-running-out-of-memory)
   for what makes it rarer.
+- **`wikidata_id field not found`, on a page that is neither 404 nor locked**:
+  the record has no English translation, so TMDB redirects the edit URL to
+  `/translate/<entity>/<id>-<slug>`, a page with no edit form. The script clicks
+  the **Create Translation** button there and comes back to the edit page.
+  Matching that button on its text alone matters: its icon span is
+  `glyphicons plus svg` on the translate page and `glyphicons_v2 plus svg`
+  elsewhere, and the class-based XPath used until 2026-09-07 matched neither,
+  which silently turned 25 of 65 movie records into skips.
 - **Records skipped in bulk, nothing written**: the run stops by itself after 8
   records in a row write nothing. Check in the browser whether TMDB is showing an
   error page, a rate limit or a login form, then resume from the stored cursor.
