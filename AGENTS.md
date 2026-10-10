@@ -76,7 +76,7 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 ---
 
 **Last Updated**: 2026-10-10
-**Current Version**: 1.0.2
+**Current Version**: 1.0.3
 
 ## Backlog (Nestor second-brain)
 
@@ -147,6 +147,13 @@ TMDb account for nothing. So a fill row that would clear another record is expor
 when the QID names this record in `P4947`/`P4983`/`P4985`, the same proof as the replace
 files. The state converges in at most one move. Filling a field nobody else holds still
 needs no proof.
+
+The first version of guard 4 checked only the record to fill, and the VPS test the same
+evening still let 18 movie pairs through in both directions: Wikidata often names
+**every** TMDb record of an item in `P4947` (a serial and its feature cut, the three
+parts of a trilogy). So the holder must also **not** be named; when both are, the QID
+stays where it is. Expected effect on the 2026-10-10 evening export: 510 rows down to
+473, 37 of 69 clearing rows dropped.
 
 When reading the logs for this kind of loop, group changed writes by `tmdb_id` and look
 for records that alternate `set` and `clear` across days. Also note that TMDb seems to

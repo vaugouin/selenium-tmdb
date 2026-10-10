@@ -127,16 +127,31 @@ AND (S1.ID_WIKIDATA IS NULL OR S1.ID_WIKIDATA = '' OR S1.ID_WIKIDATA NOT REGEXP 
    puis plus rien. Sur les exports du 2026-10-10, ce garde ecarte 31 lignes de
    films sur 81 avec effacement, 16 series sur 30, 79 personnes sur 123.
 
+   ⚠ ET LA FICHE QUI DETIENT LE QID NE DOIT PAS ETRE NOMMEE ELLE AUSSI. Premier jet
+   du garde, 2026-10-10 : seule la fiche a remplir etait verifiee. Le test sur le
+   VPS le soir meme a laisse passer 18 paires de films dans les deux sens, parce que
+   Wikidata y nomme TOUTES les fiches TMDb de l'entite : « Drums of Fu Manchu » porte
+   P4947 = 3488 et 3490 (serial et version longue), la trilogie Den-O nomme ses trois
+   volets. Les deux fiches etant chacune « prouvees », la boucle continuait. Quand
+   Wikidata nomme aussi la fiche qui detient le QID, celle-ci a autant de droit que
+   l'autre, et TMDb n'accepte le QID que sur une seule : on le laisse ou il est.
+
    EXISTS correle et non jointure : il ne s'evalue que pour les lignes qui ont un
    S2, une centaine, et s'appuie sur l'index de ID_WIKIDATA. Comparaison
    numerique voulue, sans CAST (voir AGENTS.md, collation). */
 AND ( S2.ID_SERIE IS NULL
-      OR EXISTS ( SELECT 1
-                  FROM T_WC_WIKIDATA_STATEMENT sc
-                  INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE corrob ON corrob.ID_STATEMENT = sc.ID_STATEMENT
-                  WHERE sc.ID_WIKIDATA = WS.ID_WIKIDATA AND sc.ID_PROPERTY = 'P4983'
-                    AND (sc.`RANK` IS NULL OR sc.`RANK` <> 'deprecated')
-                    AND corrob.VALUE_EXTERNAL_ID = S1.ID_SERIE ) )
+      OR ( EXISTS ( SELECT 1
+                    FROM T_WC_WIKIDATA_STATEMENT sc
+                    INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE corrob ON corrob.ID_STATEMENT = sc.ID_STATEMENT
+                    WHERE sc.ID_WIKIDATA = WS.ID_WIKIDATA AND sc.ID_PROPERTY = 'P4983'
+                      AND (sc.`RANK` IS NULL OR sc.`RANK` <> 'deprecated')
+                      AND corrob.VALUE_EXTERNAL_ID = S1.ID_SERIE )
+           AND NOT EXISTS ( SELECT 1
+                    FROM T_WC_WIKIDATA_STATEMENT sh
+                    INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE holder ON holder.ID_STATEMENT = sh.ID_STATEMENT
+                    WHERE sh.ID_WIKIDATA = WS.ID_WIKIDATA AND sh.ID_PROPERTY = 'P4983'
+                      AND (sh.`RANK` IS NULL OR sh.`RANK` <> 'deprecated')
+                      AND holder.VALUE_EXTERNAL_ID = S2.ID_SERIE ) ) )
 /* ⚠ LE BLOC « les deux cas cherches, en OU » A ETE RETIRE LE 2026-09-05, et son
    absence vaut d'etre expliquee, faute de quoi quelqu'un le remettra.
 
