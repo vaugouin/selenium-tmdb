@@ -76,7 +76,7 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 ---
 
 **Last Updated**: 2026-10-10
-**Current Version**: 1.0.3
+**Current Version**: 1.0.4
 
 ## Backlog (Nestor second-brain)
 
