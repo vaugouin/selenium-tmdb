@@ -107,6 +107,36 @@ AND amb.AMBIGU IS NULL
    Les deux populations sont disjointes par construction, leur reunion est celle que
    la requete d'origine visait. */
 AND (S1.ID_WIKIDATA IS NULL OR S1.ID_WIKIDATA = '' OR S1.ID_WIKIDATA NOT REGEXP '^Q[0-9]+$')
+/* ⚠ GARDE 4 : NE DEPLACER UN QID DEJA POSE QUE SI WIKIDATA DESIGNE CETTE FICHE.
+   Ajoute le 2026-10-10 apres une boucle constatee dans les journaux du robot.
+
+   Quand deux fiches TMDb partagent le meme identifiant IMDb (doublons TMDb), ou
+   quand une entite Wikidata porte plusieurs P345 (une trilogie, ses trois volets),
+   le rapprochement par IMDb designe les deux fiches. Celle qui a le QID sort de ce
+   fichier (garde 2), celle qui ne l'a pas y entre, avec l'autre en ID_SERIE_ERASE_WIKIDATA_ID.
+   Le robot efface l'une et remplit l'autre ; le lendemain les roles sont inverses
+   et l'export propose le chemin retour. Mesure sur les journaux du 2026-09-14 au
+   2026-10-10 : 340 fiches basculaient a chaque passage (138 films, 29 series,
+   173 personnes), 1 254 ecritures sur 4 285, autant d'editions fictives creditees
+   au compte TMDb.
+
+   Remplir une case vide reste permis sans preuve, comme avant. Prendre le QID a une
+   autre fiche demande la meme preuve que le remplacement (garde 3 du -replace) :
+   le QID lui-meme doit designer cette fiche en P4983. Sinon on laisse le QID ou il
+   est. L'etat converge : au plus un deplacement, vers la fiche que Wikidata nomme,
+   puis plus rien. Sur les exports du 2026-10-10, ce garde ecarte 31 lignes de
+   films sur 81 avec effacement, 16 series sur 30, 79 personnes sur 123.
+
+   EXISTS correle et non jointure : il ne s'evalue que pour les lignes qui ont un
+   S2, une centaine, et s'appuie sur l'index de ID_WIKIDATA. Comparaison
+   numerique voulue, sans CAST (voir AGENTS.md, collation). */
+AND ( S2.ID_SERIE IS NULL
+      OR EXISTS ( SELECT 1
+                  FROM T_WC_WIKIDATA_STATEMENT sc
+                  INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE corrob ON corrob.ID_STATEMENT = sc.ID_STATEMENT
+                  WHERE sc.ID_WIKIDATA = WS.ID_WIKIDATA AND sc.ID_PROPERTY = 'P4983'
+                    AND (sc.`RANK` IS NULL OR sc.`RANK` <> 'deprecated')
+                    AND corrob.VALUE_EXTERNAL_ID = S1.ID_SERIE ) )
 /* ⚠ LE BLOC « les deux cas cherches, en OU » A ETE RETIRE LE 2026-09-05, et son
    absence vaut d'etre expliquee, faute de quoi quelqu'un le remettra.
 

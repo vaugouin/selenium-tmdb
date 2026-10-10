@@ -25,7 +25,7 @@ The canonical sibling-repo roster lives in `%USERPROFILE%/Nestor/projets/t2s-bac
 | [selenium-tmdb-wikidata_id-series01.ipynb](selenium-tmdb-wikidata_id-series01.ipynb) | Legacy standalone notebook for TV series only. |
 | [selenium-tmdb-wikidata_id-persons01.ipynb](selenium-tmdb-wikidata_id-persons01.ipynb) | Legacy standalone notebook for persons only. |
 | [preprocess/](preprocess/) | Dockerised VPS-side job that runs the `*.sql` queries against MariaDB and emits one date-stamped CSV per entity type. Has its own [README](preprocess/README.md); not run locally. |
-| [preprocess/wikidata-id-{movie,serie,person}-fix.sql](preprocess/) | Selects TMDb records whose `wikidata_id` is EMPTY or malformed. Fills, never replaces. |
+| [preprocess/wikidata-id-{movie,serie,person}-fix.sql](preprocess/) | Selects TMDb records whose `wikidata_id` is EMPTY or malformed. Fills, never replaces. Takes a QID away from another record only when Wikidata names this one (guard 4). |
 | [preprocess/wikidata-id-{movie,serie,person}-replace.sql](preprocess/) | Selects TMDb records whose `wikidata_id` is a valid QID but WRONG. Separate file since 2026-09-05, see "Filling and replacing" below. |
 | [data/](data/) | SFTP-mirrored CSVs (under `wikidata-id-{movie,serie,person}-{fix,replace}/`). Git-ignored. |
 | [logs/](logs/) | JSON Lines trace, one file per day: `selenium-tmdb-wikidata_id-YYYYMMDD.log`. Git-ignored. |
@@ -76,7 +76,7 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 ---
 
 **Last Updated**: 2026-10-10
-**Current Version**: 1.0.1
+**Current Version**: 1.0.2
 
 ## Backlog (Nestor second-brain)
 
@@ -135,6 +135,23 @@ The same conflict shows up in the filling files too, and is worth knowing: in th
 Consequences for the notebook: six `DATASETS` entries rather than three, with distinct
 `store_key` cursors so one population can be paused without losing the other's place.
 The replacement run is short, 659 records against 19 196.
+
+**Guard 4, added 2026-10-10: the fill files must not move a QID back and forth.** When
+two TMDb records share an IMDb id (TMDb duplicates), or one Wikidata item carries
+several `P345` (a trilogy and its parts), the IMDb match designates both records. The
+one holding the QID is excluded by guard 2, the empty one is exported with the other in
+`ID_*_ERASE_WIKIDATA_ID`, the robot moves the QID, and the next export proposes the way
+back. The logs of 2026-09-14 to 2026-10-10 show 340 records flipping on every run (138
+movies, 29 series, 173 persons), 1 254 of 4 285 writes, each one an edit credited to the
+TMDb account for nothing. So a fill row that would clear another record is exported only
+when the QID names this record in `P4947`/`P4983`/`P4985`, the same proof as the replace
+files. The state converges in at most one move. Filling a field nobody else holds still
+needs no proof.
+
+When reading the logs for this kind of loop, group changed writes by `tmdb_id` and look
+for records that alternate `set` and `clear` across days. Also note that TMDb seems to
+silently refuse a QID another record already holds: the notebook still logs `success`,
+since it checks the input box and not the saved value.
 
 ## SQL files live at the root, and never in `preprocess/` unless they are meant to run
 

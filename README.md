@@ -39,6 +39,9 @@ drive a real Chrome session to apply the fix.
    creates the English translation if missing, fills in the `wikidata_id`
    field, and clicks **Save**. If a duplicate Wikidata ID is detected
    (`ID_*_ERASE_WIKIDATA_ID`), the conflicting record is cleared first.
+   Such a row is only exported when Wikidata itself names the record to fill
+   (TMDb id property `P4947`/`P4983`/`P4985`); without that proof the QID stays
+   where it is, otherwise two duplicate records would trade it on every run.
 4. Records whose `wikidata_id` field is locked are skipped. Progress is
    persisted via the IPython `%store` magic so the loop can resume where it
    stopped after a browser crash, manual interrupt, or rate limit.
