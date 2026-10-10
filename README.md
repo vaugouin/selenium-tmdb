@@ -281,14 +281,17 @@ renderer whose memory only grows. Measured over the same 12 navigations:
 | --- | --- | --- |
 | default flags | 310 to 502 MB | 16 MB per page |
 | `--disable-features=BackForwardCache` | 290 to 398 MB | 9 MB per page |
-| the same, plus the memory purge | 300 to 352 MB | 4.3 MB per page |
 
-The notebook applies both. `build_chrome_options()` turns off the back/forward
-cache, which otherwise keeps every previous page alive inside that one renderer,
-and `purge_browser_memory()` sends `Memory.forciblyPurgeJavaScriptMemory` between
-records. Neither reclaims everything, so `BROWSER_RECYCLE_EVERY` (250) restarts
-the browser regularly on top of them. Raise it if the extra logins get in the
-way, set it to `0` to turn recycling off.
+`build_chrome_options()` turns off the back/forward cache, which otherwise keeps
+every previous page alive inside that one renderer. That does not reclaim
+everything, so `BROWSER_RECYCLE_EVERY` (250) restarts the browser regularly on
+top of it. Raise it if the extra logins get in the way, set it to `0` to turn
+recycling off.
+
+A CDP purge between records (`Memory.forciblyPurgeJavaScriptMemory`) brought
+the growth down to 4.3 MB per page until Chrome 153. It was removed on
+2026-10-10: since Chrome 154, every navigation after the first purge hangs (see
+Troubleshooting).
 
 ---
 
@@ -397,6 +400,16 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   `glyphicons plus svg` on the translate page and `glyphicons_v2 plus svg`
   elsewhere, and the class-based XPath used until 2026-09-07 matched neither,
   which silently turned 25 of 65 movie records into skips.
+- **Records failing with `page_load_timeout` while the page looks loaded, 135 s
+  each, except the first one after every Chrome start**: the page draws, but
+  chromedriver never sees the load end, so `driver.get()` and the next two
+  commands each wait the full 45 s. The trigger was the CDP memory purge the
+  loop sent between records: harmless up to Chrome 153, it left every later
+  navigation hanging from Chrome 154 on (first seen 2026-10-08, 94 timeouts for
+  13 writes). The purge was removed on 2026-10-10. Switching to the `eager` page
+  load strategy did not help, which is how the load event was ruled out. If the
+  symptom comes back after a Chrome update, look first for any CDP call made
+  between navigations.
 - **Records skipped in bulk, nothing written**: the run stops by itself after 8
   records in a row write nothing. Check in the browser whether TMDB is showing an
   error page, a rate limit or a login form, then resume from the stored cursor.

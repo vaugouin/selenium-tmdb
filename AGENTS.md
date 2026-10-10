@@ -42,6 +42,7 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 - The browser is disposable: `process_dataset` **returns** the driver it ends up using, because a crash is recovered by `restart_browser` (new Chrome, new login) and the old session dies with it. Any caller must rebind (`driver = process_dataset(driver, dataset)`) rather than keep the driver it passed in.
 - Only `is_browser_gone` decides that a failure means a dead browser, and only `BrowserSessionLost` marks a lost TMDB session. Keep both narrow: catching `WebDriverException` broadly would restart Chrome over a missing element, and a record skipped for a real reason (locked field, 404) must keep advancing the cursor.
 - Navigation goes through `open_page` / `open_edit_page`, never a bare `driver.get`, so a page that never finishes loading is skipped instead of tripping the client read timeout that signals a crash, and Chrome's own error page (`chrome-error://chromewebdata/`, body class `neterror`) is recognised there rather than silently treated as a page.
+- No CDP call between navigations without a full run behind it. `Memory.forciblyPurgeJavaScriptMemory`, sent between records from 2026-09-05, was harmless on Chrome 152-153 and from Chrome 154 left every later navigation hanging: the page draws, chromedriver never sees the load end, each record costs three 45 s timeouts and ends as a skip while the cursor advances (2026-10-08 and 2026-10-10, over a hundred records lost). The tell is in the log: only the first row after each Chrome start succeeds. Removed on 2026-10-10; the `eager` page load strategy was tried first and changed nothing.
 - Save is clicked through `click_save_button`, never with a bare `find_element(...).click()`: TMDB's OneTrust cookie banner sits at the bottom of the window, over the Save button, and swallows the click. `login_tmdb` declines it (`#onetrust-reject-all-handler`, "Tout refuser") once per browser, which is why every restart declines it again.
 - Match TMDB's buttons on their **text**, not on their icon classes. The same "Create Translation" button carries `glyphicons plus svg` on the translate page and `glyphicons_v2 plus svg` elsewhere; an XPath keyed on the classes matched nothing, and the failure was silent because the code read "button absent" as "translation already exists".
 - Every write to TMDB is traced by `log_wikidata_write`, one JSON line in `logs/selenium-tmdb-wikidata_id-YYYYMMDD.log`. The unit is the **attempt**, not the success: each early `return False` of `set_wikidata_id` / `clear_wikidata_id` carries its own `trace(outcome, reason)` call, with `reason` taken from a closed vocabulary (`page_load_timeout`, `page_not_found`, `translation_failed`, `field_not_found`, `locked`, `field_not_editable`, `field_write_refused`, `save_not_confirmed`, `session_lost`). A new exit path needs a new line there, or the run silently loses a record; a new reason needs to join that list rather than be invented in place, since the value is what a later reader groups on. `append_log_event` swallows its own errors on purpose: the trace is a witness, never a gate.
@@ -74,8 +75,8 @@ The notebooks are the only locally-run code. There are no `.py` modules at the r
 
 ---
 
-**Last Updated**: 2026-09-05
-**Current Version**: 1.0.0
+**Last Updated**: 2026-10-10
+**Current Version**: 1.0.1
 
 ## Backlog (Nestor second-brain)
 
