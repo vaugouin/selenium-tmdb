@@ -45,3 +45,6 @@ data/
 # Claude Code / agent local tooling
 .claude/
 .agents/
+
+# Flag file written by off.sh, removed by on.sh: the scheduled task is switched off
+CRON_OFF

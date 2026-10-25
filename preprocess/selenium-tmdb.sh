@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Switched off by off.sh, back on with on.sh: the flag file CRON_OFF next to this script makes
+# every cron tick exit here. The script keeps its name, so the git clone stays clean.
+if [ -f "$(dirname "$(readlink -f "$0")")/CRON_OFF" ]; then
+    echo "CRON_OFF present: selenium-tmdb switched off (bash on.sh to switch it back on)."
+    exit 0
+fi
+
 # Define the folder path and file name
 FOLDER_PATH="/home/debian/docker/selenium-tmdb/preprocess"
 ENV_FILE="${FOLDER_PATH}/.env"

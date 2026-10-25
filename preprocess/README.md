@@ -56,7 +56,7 @@ CitizenPhil stack can observe progress and runtime.
 | [wikidata-id-movie-fix/](wikidata-id-movie-fix/) | Generated CSVs for movies (git-ignored). |
 | [wikidata-id-serie-fix/](wikidata-id-serie-fix/) | Generated CSVs for series (git-ignored). |
 | [wikidata-id-person-fix/](wikidata-id-person-fix/) | Generated CSVs for persons (git-ignored). |
-| [on.sh](on.sh) / [off.sh](off.sh) | Enable / disable the launcher by renaming `selenium-tmdb.sh`. Handy when chaining with cron. |
+| [on.sh](on.sh) / [off.sh](off.sh) | Enable / disable the launcher: `off.sh` writes the flag file `CRON_OFF`, which makes `selenium-tmdb.sh` exit at once, `on.sh` deletes it. |
 | [requirements.txt](requirements.txt) | Python deps: `pymysql`, `numpy`, `pytz`, `python-dotenv`. |
 | [.env.example](.env.example) | Template for the container's `.env` (DB credentials + timezone). |
 
@@ -175,10 +175,10 @@ docker logs -f selenium-tmdb
 
 ### Pause / resume the cron
 
-`on.sh` and `off.sh` simply rename `selenium-tmdb.sh` to
-`selenium-tmdb-off.sh` (and back), which is convenient when the script is
-invoked from cron and you need to disable it temporarily without editing the
-crontab.
+`off.sh` writes the flag file `CRON_OFF` next to `selenium-tmdb.sh`, which then
+exits at once, and `on.sh` deletes it: convenient when the script is invoked from
+cron and you need to disable it temporarily without editing the crontab (until
+2026-10-25 the pair renamed the script).
 
 ### Manual run without Docker
 
