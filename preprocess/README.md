@@ -3,8 +3,8 @@
 VPS-side, Dockerised job that produces the CSV input consumed by the Selenium
 notebooks at the repository root. It queries the MariaDB / MySQL database that
 backs the CitizenPhil application, exports the rows that need fixing on TMDB,
-and writes one dated CSV per entity type (movies, series, persons) into
-subfolders that are then served over SFTP.
+and writes one dated CSV per query (fill and replace, for movies, series and
+persons) into subfolders that are then served over SFTP.
 
 For the overall workflow and the consumer notebooks, see the
 [root README](../README.md).
@@ -16,7 +16,8 @@ For the overall workflow and the consumer notebooks, see the
 ```
 +--------------------+    SQL     +-----------+    write    +---------------------------+
 | selenium-tmdb.py   |  -------> | MariaDB DB |  -------->  | wikidata-id-*-fix/        |
-| (inside container) |           |            |             |   *-YYYYMMDD.csv          |
+| (inside container) |           |            |             | wikidata-id-*-replace/    |
+|                    |           |            |             |   *-YYYYMMDD.csv          |
 +--------------------+           +-----------+              +-----------+---------------+
         ^                                                              |
         | docker run                                                   | SFTP (served from $FOLDER_PATH)
@@ -34,7 +35,12 @@ For each `*.sql` file found next to `selenium-tmdb.py`, the script:
 3. Creates an output directory named after the SQL file stem
    (e.g. `wikidata-id-movie-fix/`).
 4. Writes the result set as `<stem>-YYYYMMDD.csv` with `;` separator,
-   `"`-quoted fields, and a literal `NULL` for null values.
+   `"`-quoted fields, and a literal `NULL` for null values. The rows go first
+   to `<stem>-YYYYMMDD.csv.partial`, renamed only once complete.
+
+Each file runs in its own `try`: a failing file is reported and skipped, the
+others still run, and its previous export stays the latest one. The run then
+ends with exit code 1.
 
 It also updates a handful of `T_*SERVER_VARIABLE` rows so the rest of the
 CitizenPhil stack can observe progress and runtime.
@@ -53,9 +59,13 @@ CitizenPhil stack can observe progress and runtime.
 | [wikidata-id-movie-fix.sql](wikidata-id-movie-fix.sql) | Movies whose TMDB `ID_WIKIDATA` is missing/invalid while Wikidata has a match by IMDb ID. |
 | [wikidata-id-serie-fix.sql](wikidata-id-serie-fix.sql) | Same for TV series. |
 | [wikidata-id-person-fix.sql](wikidata-id-person-fix.sql) | Same for persons. |
+| [wikidata-id-movie-replace.sql](wikidata-id-movie-replace.sql) | Movies whose TMDB `ID_WIKIDATA` is a valid QID but differs from Wikidata's, exported only when the candidate QID itself names that TMDB record. |
+| [wikidata-id-serie-replace.sql](wikidata-id-serie-replace.sql) | Same for TV series. |
+| [wikidata-id-person-replace.sql](wikidata-id-person-replace.sql) | Same for persons. |
 | [wikidata-id-movie-fix/](wikidata-id-movie-fix/) | Generated CSVs for movies (git-ignored). |
 | [wikidata-id-serie-fix/](wikidata-id-serie-fix/) | Generated CSVs for series (git-ignored). |
 | [wikidata-id-person-fix/](wikidata-id-person-fix/) | Generated CSVs for persons (git-ignored). |
+| `wikidata-id-*-replace/` | Generated CSVs of the three replace queries. |
 | [on.sh](on.sh) / [off.sh](off.sh) | Enable / disable the launcher: `off.sh` writes the flag file `CRON_OFF`, which makes `selenium-tmdb.sh` exit at once, `on.sh` deletes it. |
 | [requirements.txt](requirements.txt) | Python deps: `pymysql`, `numpy`, `pytz`, `python-dotenv`. |
 | [.env.example](.env.example) | Template for the container's `.env` (DB credentials + timezone). |
@@ -64,19 +74,27 @@ CitizenPhil stack can observe progress and runtime.
 
 ## SQL queries
 
-The three `.sql` files share the same shape — they pick TMDB records whose
-`ID_WIKIDATA` is `NULL`, empty, or does not match the canonical `^Q[0-9]+$`
-regex, but for which a row exists in the corresponding `T_WC_WIKIDATA_*_V1`
-table with a matching IMDb ID. They also surface any TMDB record that already
-holds the target Wikidata ID, so the consumer notebook can clear the duplicate
-before applying the fix.
+The six `.sql` files share the same shape. They match a TMDB record to a
+Wikidata entity (`T_WC_WIKIDATA_MOVIE` / `_SERIE` / `_PERSON`) through the IMDb
+ID carried as a `P345` statement (`T_WC_WIKIDATA_STATEMENT` and
+`T_WC_WIKIDATA_EXTERNAL_ID_VALUE`), and leave out IMDb IDs shared by several
+Wikidata entities. The three `-fix` files pick TMDB records whose `ID_WIKIDATA`
+is `NULL`, empty, or does not match the canonical `^Q[0-9]+$` regex. The three
+`-replace` files pick records whose `ID_WIKIDATA` is a valid QID different from
+Wikidata's, and only when the candidate QID names that TMDB record in its TMDb
+ID statement (`P4947` / `P4983` / `P4985`). The queries also surface any TMDB
+record that already holds the target Wikidata ID, so the consumer notebook can
+clear the duplicate before applying the fix; in a `-fix` file such a row is
+exported only when Wikidata names the record to fill and not the holder. The
+reasoning and measurements are in the header comment of each file.
 
 Output columns (as joined / aliased by the queries):
 
 - `ID_MOVIE` / `ID_SERIE` / `ID_PERSON` — TMDB ID to update.
 - `ID_WIKIDATA` — target Wikidata ID to write.
 - `ID_IMDB` — the IMDb ID that links the two records.
-- `ID_WIKIDATA_*` — the Wikidata-side ID (informational).
+- `ID_WIKIDATA_*`: the TMDB ID that the Wikidata entity carries in its
+  `P4947` / `P4983` / `P4985` statement (informational).
 - `ID_TMDB_WIKIDATA` — the current value stored on TMDB (informational).
 - `TITLE` / `NAME` — display label.
 - `ADULT` — adult-content flag.
@@ -99,16 +117,16 @@ Secrets are **never** baked into the image. Concretely:
   into image layers, the build cache, or any registry the image is pushed to.
 - At runtime the [selenium-tmdb.sh](selenium-tmdb.sh) launcher injects the
   variables with Docker's `--env-file` option, reading a host-managed file
-  that lives **outside** the app source tree
-  (`/home/debian/docker/selenium-tmdb/.env`).
+  that is git-ignored and excluded from the build context
+  (`/home/debian/docker/selenium-tmdb/preprocess/.env`).
 
 ### Host-managed env file
 
-Create the env file on the VPS, outside any directory that gets copied into
-the image:
+Create the env file on the VPS, next to `selenium-tmdb.sh` (`.dockerignore`
+keeps it out of the image):
 
 ```bash
-sudo install -m 600 -o debian -g debian /dev/null /home/debian/docker/selenium-tmdb/.env
+sudo install -m 600 -o debian -g debian /dev/null /home/debian/docker/selenium-tmdb/preprocess/.env
 ```
 
 Populate it from [.env.example](.env.example):
@@ -142,7 +160,7 @@ launches the container detached with the working directory mounted into
 `/app` and the secrets injected via `--env-file`:
 
 ```bash
-cd /home/debian/docker/selenium-tmdb
+cd /home/debian/docker/selenium-tmdb/preprocess
 ./selenium-tmdb.sh
 ```
 
@@ -151,15 +169,14 @@ What it does:
 ```bash
 docker build -t selenium-tmdb-python-app .
 docker run -d --rm --network="host" \
-    --env-file /home/debian/docker/selenium-tmdb/.env \
+    --env-file /home/debian/docker/selenium-tmdb/preprocess/.env \
     -v $(pwd):/app \
     --name selenium-tmdb \
     selenium-tmdb-python-app
 ```
 
-- `--env-file /home/debian/docker/selenium-tmdb/.env` injects the secrets at
-  **runtime** from a host-managed file that lives outside the app source
-  tree. The file is excluded from the build context by `.dockerignore`, so it
+- `--env-file /home/debian/docker/selenium-tmdb/preprocess/.env` injects the
+  secrets at **runtime** from a host-managed file. The file is excluded from the build context by `.dockerignore`, so it
   never ends up in image layers, build cache, or any pushed registry image.
 - `--network="host"` lets the container reach the local MariaDB instance via
   `DB_HOST=localhost` / `127.0.0.1`. Adjust if your DB lives elsewhere.
@@ -203,7 +220,7 @@ never via inline `-e KEY=value` (which would expose them in shell history and
 ```bash
 docker build -t selenium-tmdb-python-app .
 docker run -d --rm --network=host \
-    --env-file /home/debian/docker/selenium-tmdb/.env \
+    --env-file /home/debian/docker/selenium-tmdb/preprocess/.env \
     -v $(pwd):/app \
     --name selenium-tmdb \
     selenium-tmdb-python-app
@@ -223,8 +240,11 @@ Example after a single run on 2026-05-19:
 
 ```
 wikidata-id-movie-fix/wikidata-id-movie-fix-20260519.csv
-wikidata-id-serie-fix/wikidata-id-serie-fix-20260519.csv
+wikidata-id-movie-replace/wikidata-id-movie-replace-20260519.csv
 wikidata-id-person-fix/wikidata-id-person-fix-20260519.csv
+wikidata-id-person-replace/wikidata-id-person-replace-20260519.csv
+wikidata-id-serie-fix/wikidata-id-serie-fix-20260519.csv
+wikidata-id-serie-replace/wikidata-id-serie-replace-20260519.csv
 ```
 
 CSV format:
@@ -256,6 +276,7 @@ updates the following keys on each run:
 | `strseleniumtmdbtotalruntimesecond` | Duration in seconds. |
 | `strseleniumtmdbtotalruntimeprevious` | Previous run's duration. |
 | `strseleniumtmdbprocess1SQLqueriescount` | Number of `.sql` files processed in the current run. |
+| `strseleniumtmdbprocess1SQLqueriesfailures` | `.sql` files that failed in the current run, with their error; empty when all passed. |
 | `strseleniumtmdbdatetime` | Timestamp of the last processed file. |
 
 MySQL lock-wait-timeout errors (code 1205) are caught, logged, and retried up

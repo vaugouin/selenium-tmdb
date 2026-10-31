@@ -20,7 +20,7 @@ drive a real Chrome session to apply the fix.
 |  preprocess/selenium-tmdb.py     |                    | selenium-tmdb-wikidata_id*.ipynb |
 |    -> runs *.sql against MariaDB |                    |   -> downloads CSV via SFTP   |
 |    -> writes one CSV per query   |                    |   -> logs in to TMDB          |
-|       in wikidata-id-*-fix/      |                    |   -> updates wikidata_id      |
+|       in wikidata-id-*/          |                    |   -> updates wikidata_id      |
 +----------------------------------+                    +-------------------------------+
 ```
 
@@ -31,8 +31,12 @@ drive a real Chrome session to apply the fix.
    - `wikidata-id-movie-fix/wikidata-id-movie-fix-YYYYMMDD.csv`
    - `wikidata-id-serie-fix/wikidata-id-serie-fix-YYYYMMDD.csv`
    - `wikidata-id-person-fix/wikidata-id-person-fix-YYYYMMDD.csv`
-2. The notebooks in this repo connect to that VPS over SFTP, mirror the three
-   folders into `./data/`, pick the most recently modified CSV per entity, and
+
+   Three more queries find records whose `ID_WIKIDATA` is a valid QID but
+   differs from Wikidata's, kept only when that QID names the TMDB record itself
+   (`P4947`/`P4983`/`P4985`), and write `wikidata-id-<entity>-replace/wikidata-id-<entity>-replace-YYYYMMDD.csv`.
+2. The notebooks in this repo connect to that VPS over SFTP, mirror the
+   folders into `./data/`, pick the most recently modified CSV per dataset, and
    iterate through its rows.
 3. For each row the notebook navigates Chrome to the TMDB edit page,
    `https://www.themoviedb.org/{movie|tv|person}/{id}/edit?active_nav_item=external_ids`,
@@ -60,6 +64,7 @@ drive a real Chrome session to apply the fix.
 | [data/](data/) | Downloaded CSVs (git-ignored). |
 | [logs/](logs/) | JSON Lines trace of every wikidata_id write, one file per day (git-ignored). |
 | [doc/](doc/) | Reserved for additional documentation. |
+| [archive/](archive/) | SQL tests of closed operations, with their results. |
 | [requirements.txt](requirements.txt) | Python dependencies for the notebooks. |
 | [.env.example](.env.example) | Template for the local `.env` file. |
 
@@ -114,7 +119,7 @@ TMDB_PASSWORD=your_tmdb_password
 SFTP_HOST=your_sftp_host
 SFTP_PORT=22
 SFTP_LOGIN=your_sftp_login
-SFTP_FOLDER=/home/debian/docker/selenium-tmdb
+SFTP_FOLDER=/home/debian/docker/selenium-tmdb/preprocess
 
 # Server verification (WinSCP SshHostKeyFingerprint format)
 SFTP_SSHHOSTKEYFINGERPRINT=ssh-ed25519 256 SHA256:your_base64_digest
@@ -129,8 +134,8 @@ SFTP_PASSWORD=
 
 `SFTP_HOST`, `SFTP_LOGIN` and `SFTP_FOLDER` are the only mandatory SFTP
 variables. `SFTP_FOLDER` must point to the directory that contains the
-`wikidata-id-movie-fix/`, `wikidata-id-serie-fix/` and
-`wikidata-id-person-fix/` subfolders produced by the preprocess job.
+`wikidata-id-<entity>-fix/` and `wikidata-id-<entity>-replace/` subfolders
+produced by the preprocess job.
 
 `.env` is git-ignored — never commit credentials.
 
@@ -175,8 +180,8 @@ VPS, and its secrets are **never** baked into the image:
 - `preprocess/Dockerfile` does not `COPY` `.env` and uses no secret-bearing
   `ENV` lines.
 - `preprocess/selenium-tmdb.sh` injects secrets at runtime via
-  `--env-file /home/debian/docker/selenium-tmdb/.env`, reading a
-  host-managed file that lives outside the app source tree.
+  `--env-file /home/debian/docker/selenium-tmdb/preprocess/.env`, reading a
+  host-managed, git-ignored file kept out of the build context.
 
 See [preprocess/README.md](preprocess/README.md) for the full policy.
 
@@ -195,21 +200,27 @@ jupyter lab
 [selenium-tmdb-wikidata_id.ipynb](selenium-tmdb-wikidata_id.ipynb) ingests all
 three entity types in a single pass:
 
-1. **Cells 0–1** — imports and credential check (raises `ValueError` if the
-   `.env` is incomplete).
-2. **Cell 2** — defines `DATASETS`, the per-entity config (CSV folder name,
-   ID column, TMDB URL fragment, `%store` key, etc.).
-3. **Cell 3** — pure-function helpers: `download_new_csv_files`,
+1. **Cells 1 and 2**: imports and credential check (raises `ValueError` if the
+   `.env` is incomplete). Cell 0 is a commented-out `%pip install paramiko`.
+2. **Cell 3**: defines `DATASETS`, six entries: the fill (`fix`) and the
+   `replace` dataset of each entity, each with its CSV folder name, ID column,
+   TMDB URL fragment, `%store` key, etc.
+3. **Cell 4**: pure-function helpers: `download_new_csv_files`,
    `get_latest_csv`, `set_wikidata_id`, `clear_wikidata_id`, `process_dataset`,
    etc.
-4. **Cell 4** — downloads new CSVs for every dataset, then launches Chrome and
+4. **Cell 5**: downloads new CSVs for every dataset, then launches Chrome and
    logs into TMDB, declining the cookie banner on the way (it is anchored over
    the Save button).
-5. **Cell 5** — runs `process_dataset` for movies, series, then persons. Each
-   call returns the driver it ends up using and the cell rebinds it
-   (`driver = process_dataset(driver, ...)`), because a crashed Chrome is
-   replaced mid-run by a fresh, logged-in one.
-6. **Last cell** — navigates Chrome back to the home page when done.
+5. **Cell 6**: read-only diagnostic, `debug_wikidata_page`, which inspects one
+   edit page without writing.
+6. **Cell 7**: runs `process_dataset` for the movie, series, then person fill
+   datasets (`DATASETS[0]` to `[2]`). Each call returns the driver it ends up
+   using and the cell rebinds it (`driver = process_dataset(driver, ...)`),
+   because a crashed Chrome is replaced mid-run by a fresh, logged-in one. The
+   three `replace` datasets (`DATASETS[3]` to `[5]`) are not called by this
+   cell: run them by hand the same way.
+7. **Cell 8**: navigates Chrome back to the home page when done.
+8. **Cell 9**: resets the six `%store` cursors to 0.
 
 ### Entity-specific notebooks
 
@@ -228,8 +239,10 @@ Each iteration writes the last processed ID to the IPython store:
 %store lngmovieidstart    # also lngserieidstart, lngpersonidstart
 ```
 
-Re-running cell 2 of the legacy notebooks (or restarting the unified notebook)
-loads the cursor with `%store -r` and the loop skips everything already done.
+Re-running cell 2 of the legacy notebooks loads the cursor with `%store -r`;
+the unified notebook reads it back through `get_store_value`, one key per
+dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...). Either way the
+loop skips everything already done.
 
 ### When Chrome crashes
 
