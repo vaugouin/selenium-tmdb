@@ -1,5 +1,9 @@
 # AGENTS.md - Agent Guide for selenium-tmdb
 
+## Canary
+
+Start every reply with "Philippe,": no exceptions, including short replies and tool summaries.
+
 Rules an agent needs to work on this codebase safely. Overview, layout, setup, configuration, CSV schema, log format and troubleshooting live in @README.md (and [preprocess/README.md](preprocess/README.md) for the VPS job), which are canonical: update them for any user-facing change, and update this file only when agent workflow or safety context changes. `CLAUDE.md` and any other tool-specific file only point here.
 
 ---
@@ -48,7 +52,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 ---
 
 **Last Updated**: 2026-10-31
-**Current Version**: 1.0.8
+**Current Version**: 1.0.9
 
 ## Backlog (Nestor second-brain)
 
