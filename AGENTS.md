@@ -14,7 +14,7 @@ Part of **Agent BBB** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor
 
 ## Where things live (file → role)
 
-See README § Repository layout. Non-obvious points: the notebooks are the only locally-run code, and all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in `.py` modules. The `-movies01` / `-series01` / `-persons01` notebooks are legacy; the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
+See README § Repository layout. Non-obvious points: the notebooks are the only locally-run code, and all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in `.py` modules. The `-movies01` / `-series01` / `-persons01` notebooks are legacy; the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's Day of Death from `preprocess/deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the field, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
 
 ## Code conventions
 
@@ -45,6 +45,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 - Every run **modifies live records on a third-party site** (writes, and in conflict cases clears, QIDs on TMDb). Run it deliberately and interactively from Jupyter while watching the browser; never wire it into CI/cron. Respect TMDb's ToS and rate limits.
 - `clear_wikidata_id` is destructive: verify the `ID_*_ERASE_WIKIDATA_ID` rows of a fresh CSV before running.
 - The `*_replace` datasets overwrite valid data: read the CSV and watch the first run of each.
+- The death-date notebook starts with `DRY_RUN = True` (pages checked, nothing saved). Read a dry run before turning it off, then start with a small `MAX_ROWS`. It never writes over an existing Day of Death, and skips every person a previous real run already wrote, found locked or found set (read back from `logs/selenium-tmdb-deathday-*.log`).
 - Moderator-**locked** fields are skipped on purpose; never add code to force them.
 - Crash recovery (bounded by `BROWSER_RESTART_ATTEMPTS`) does not make the run unattended: a CAPTCHA needs a human, and each restart replays the current record live.
 - A record without an English translation redirects to `/translate/...`; `create_english_translation` then makes a real write to TMDB.
@@ -52,7 +53,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 ---
 
 **Last Updated**: 2026-10-31
-**Current Version**: 1.0.11
+**Current Version**: 1.0.12
 
 ## Backlog (Nestor second-brain)
 
