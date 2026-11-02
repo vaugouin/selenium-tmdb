@@ -76,7 +76,7 @@ FROM (
                          INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE ev ON ev.ID_STATEMENT = sv.ID_STATEMENT
                          WHERE sv.ID_WIKIDATA = P.ID_WIKIDATA AND sv.ID_PROPERTY = 'P4985'
                            AND (sv.`RANK` IS NULL OR sv.`RANK` <> 'deprecated')
-                           AND ev.VALUE_EXTERNAL_ID = P.ID_PERSON )
+                           AND ev.VALUE_EXTERNAL_ID = CONVERT(P.ID_PERSON, CHAR) COLLATE utf8mb4_unicode_ci )
            THEN 'P4985' ELSE 'P345' END AS IDENTITY,
       CASE WHEN P.BIRTHDAY IS NULL THEN NULL
            ELSE YEAR(P.BIRTHDAY) * 10000 + MONTH(P.BIRTHDAY) * 100 + DAY(P.BIRTHDAY) END AS TMDB_BIRTH_YMD,
@@ -133,7 +133,7 @@ FROM (
                        INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE ev ON ev.ID_STATEMENT = sv.ID_STATEMENT
                        WHERE sv.ID_WIKIDATA = P.ID_WIKIDATA AND sv.ID_PROPERTY = 'P4985'
                          AND (sv.`RANK` IS NULL OR sv.`RANK` <> 'deprecated')
-                         AND ev.VALUE_EXTERNAL_ID = P.ID_PERSON )
+                         AND ev.VALUE_EXTERNAL_ID = CONVERT(P.ID_PERSON, CHAR) COLLATE utf8mb4_unicode_ci )
               OR ( P.ID_IMDB LIKE 'nm%'
                    AND EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT si
                                 INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE iv ON iv.ID_STATEMENT = si.ID_STATEMENT
