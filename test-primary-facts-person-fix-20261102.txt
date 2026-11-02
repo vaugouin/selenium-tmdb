@@ -1,5 +1,5 @@
 -- test-primary-facts-person-fix.sql
--- run on vaugouindb (container damp-vaugouin-com-mariadb-1) at 2026-11-02 17:51:23 +0100
+-- run on vaugouindb (container damp-vaugouin-com-mariadb-1) at 2026-11-02 17:56:37 +0100
 --
 +------------------------------------+
 | section                            |
@@ -9,7 +9,7 @@
 +---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
 | rows_exported | non_adult | deaths | births | genders | places | places_unbuilt | rows_with_nothing |
 +---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
-|         89610 |     88501 |  18873 |  45991 |   53924 |  40960 |          17084 |                 0 |
+|         89567 |     88459 |  18873 |  45991 |   53924 |  40520 |          17481 |                 0 |
 +---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
 +---------------------------+
 | section                   |
@@ -19,8 +19,8 @@
 +----------+-------+
 | IDENTITY | n     |
 +----------+-------+
-| P345     |  4967 |
-| P4985    | 84643 |
+| P345     |  4965 |
+| P4985    | 84602 |
 +----------+-------+
 +--------------------------+
 | section                  |
@@ -30,7 +30,7 @@
 +--------+-------+
 | GENDER | n     |
 +--------+-------+
-|   NULL | 35686 |
+|   NULL | 35643 |
 |      1 | 15387 |
 |      2 | 38507 |
 |      3 |    30 |
@@ -158,57 +158,59 @@
 +-------------------------------------+
 | === 6. Place strings: random 40 === |
 +-------------------------------------+
-+-----------+-------------------------+-------------------------------------+--------------------+
-| ID_PERSON | NAME                    | PLACE_OF_BIRTH                      | PLACE_OF_BIRTH_QID |
-+-----------+-------------------------+-------------------------------------+--------------------+
-|    130091 | J. Scott Smart          | Philadelphia, Pennsylvania, USA     | Q1345              |
-|   1941859 | Corinne Pulver          | Bern, Switzerland                   | Q70                |
-|   2867563 | Zdeněk Rón              | Vysoké nad Jizerou, Czech Republic  | Q164527            |
-|   1492490 | Joe Albany              | Atlantic City, New Jersey, USA      | Q139564            |
-|   1305678 | Nic Bal                 | Vilvoorde, Belgium                  | Q31573419          |
-|   1316450 | Ulrich von Dobschütz    | Szklarska Poręba, Poland            | Q186495            |
-|   2118643 | Eiji Kakutani           | Osaka Prefecture, Japan             | Q122723            |
-|    221428 | Pascal Verdosci         | Fribourg, Switzerland               | Q36378             |
-|   1423300 | Adriano Chiaramida      | Livorno, Italy                      | Q6761              |
-|     11453 | Rafael Yglesias         | New York City, New York, USA        | Q60                |
-|   1217720 | Bobby Southworth        | Santa Cruz, California, USA         | Q159232            |
-|   1325922 | Pierre Decourcelle      | boulevard Saint-Martin, France      | Q2921926           |
-|   2695084 | Martin Ježek            | Prostějov, Czech Republic           | Q470445            |
-|     51697 | Edgar Burcksen          | Apeldoorn, Netherlands              | Q101918            |
-|   1255665 | Curtis Cregan           | East Lansing, Michigan, USA         | Q871265            |
-|   2470857 | Václav Štercl           | Blovice, Czech Republic             | Q885482            |
-|   1114059 | Rosa Gàmiz              | Badalona, Spain                     | Q15468             |
-|    381674 | Mariann Rudberg         | Landskrona, Sweden                  | Q54352             |
-|    951183 | Stephen K. Hayes        | Wilmington, Delaware, USA           | Q174224            |
-|   1265047 | Howie Carr              | Portland, Massachusetts, USA        | Q49201             |
-|     70994 | Vardis Fisher           | Idaho, USA                          | Q1221              |
-|   4295707 | Mike Peters             | St. Louis, Missouri, USA            | Q38022             |
-|   1308722 | Ranko Tihomirović       | Čakovec, Croatia                    | Q167839            |
-|     79289 | Javier Pereira          | Madrid, Spain                       | Q2807              |
-|   1534224 | Keisaku Kimura          | Inuyama, Japan                      | Q503411            |
-|   2153573 | Tiffany Herrera         | Los Angeles, California, USA        | Q65                |
-|   1334466 | Lidiya Kompaniyets      | Hryhorivka, Ukraine                 | Q4149167           |
-|   1223306 | Gabriel Ripstein        | Mexico City, Mexico                 | Q1489              |
-|   1214177 | Danny Breen             | Ohio, USA                           | Q1397              |
-|   2325713 | Eric Andersen           | Pittsburgh, Pennsylvania, USA       | Q1342              |
-|    132937 | Tomoyuki Maruo          | Fukushima Prefecture, Japan         | Q71707             |
-|   1527844 | Nico Cota               | Buenos Aires, Argentina             | Q1486              |
-|   1434698 | Millan Fjellström       | Gothenburg, Sweden                  | Q25287             |
-|   2746708 | Konstantina Mantelos    | Toronto, Ontario, Canada            | Q172               |
-|     37844 | Juan Margallo           | Cáceres, Spain                      | Q15678             |
-|    144546 | Miguel Ángel Lamata     | Zaragoza, Spain                     | Q10305             |
-|   1336557 | Dmitri Mikhleyev        | Yaña Elmäle, Russia                 | Q4323781           |
-|   1073972 | Maria Saccenti          | La Spezia, Italy                    | Q8611              |
-|   1029887 | Jean-François Pichette  | Montreal, Quebec, Canada            | Q340               |
-|   1286452 | Masaki Tanimura         | Osaka Prefecture, Japan             | Q122723            |
-+-----------+-------------------------+-------------------------------------+--------------------+
-+----------------------------------+
-| section                          |
-+----------------------------------+
-| === 7. Joan Gregson (168765) === |
-+----------------------------------+
-+-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
-| ID_PERSON | NAME         | ID_WIKIDATA | IDENTITY | DATE_OF_DEATH | DATE_OF_BIRTH | GENDER | PLACE_OF_BIRTH | PLACE_OF_BIRTH_QID | POPULARITY | ADULT |
-+-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
-|    168765 | Joan Gregson | Q42313814   | P4985    | 2025-06-06    | NULL          |   NULL | NULL           | NULL               |       16.5 |     0 |
-+-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
++-----------+-------------------------+--------------------------------+--------------------+
+| ID_PERSON | NAME                    | PLACE_OF_BIRTH                 | PLACE_OF_BIRTH_QID |
++-----------+-------------------------+--------------------------------+--------------------+
+|    131593 | Soledad Mallol          | Madrid, Spain                  | Q2807              |
+|   2010199 | Shusaku Kamikawa        | Ōita Prefecture, Japan         | Q133924            |
+|   3029125 | Seymour Red Press       | The Bronx, New York, USA       | Q18426             |
+|   1504620 | Giovanni Zelko          | New York City, New York, USA   | Q60                |
+|   1312400 | Charles Pellegrino      | New York City, New York, USA   | Q60                |
+|   1323956 | Anne-Laure Folly        | Lomé, Togo                     | Q3792              |
+|   2215945 | René Šmotek             | Přílepy, Czech Republic        | Q693544            |
+|    223430 | František Skřípek       | Košťálov, Czech Republic       | Q1700487           |
+|   1434249 | Ernst Marcusson         | Uppsala, Sweden                | Q25286             |
+|     11563 | Jean Mousselle          | Verberie, France               | Q815701            |
+|   1221580 | Krystal Forscutt        | New South Wales, Australia     | Q3224              |
+|   1334841 | Karl Schönherr          | Axams, Austria                 | Q384648            |
+|   2844159 | Nadine Ibrahim          | Kaduna, Nigeria                | Q208318            |
+|     52695 | Ron J. Friedman         | Manhattan, New York, USA       | Q11299             |
+|   1262717 | Michel Tikhomiroff      | Rio de Janeiro, Brazil         | Q8678              |
+|   2572007 | Mary Lea Johnson        | New Brunswick, New Jersey, USA | Q138338            |
+|   1121619 | Max de Vaucorbeil       | Brussels, Belgium              | Q239               |
+|    530124 | Serhiy Pidhornyi        | Bucha, Ukraine                 | Q1013474           |
+|    975536 | William Hardy           | Houston, Texas, USA            | Q16555             |
+|   1271774 | Etienne Davodeau        | Botz-en-Mauges, France         | Q776161            |
+|     72229 | Jacques Bilodeau        | Montreal, Quebec, Canada       | Q340               |
+|   4883716 | Lee Jung-hoon           | Busan, South Korea             | Q16520             |
+|   1315308 | Vitali Ivanov           | Znamianka, Ukraine             | Q592145            |
+|     80894 | Zim Zum                 | Chicago, Illinois, USA         | Q1297              |
+|   1557455 | Marc Dufumier           | Pacy-sur-Eure, France          | Q318135            |
+|   2253884 | Vladimír T. Gottwald    | Volyně, Czech Republic         | Q1017889           |
+|   1343579 | Khalil Ramos            | Parañaque, Philippines         | Q17182             |
+|   1227465 | Herbert Klynn           | Cleveland, Ohio, USA           | Q37320             |
+|   1217532 | Jordan Clarke           | Rochester, New York, USA       | Q49218             |
+|   2418290 | Karel Misař             | Ploskovice, Czech Republic     | Q1017256           |
+|    134446 | Kiralee Hayashi         | Hawaii, USA                    | Q782               |
+|   1543270 | Rupinder Inderjit       | Patiala, India                 | Q208162            |
+|   1446238 | Thurayya Fakhry         | Zahlé, Lebanon                 | Q26569             |
+|   2921414 | Tony Moclair            | County Cork, Ireland           | Q162475            |
+|     38652 | Marc Rosenberg          | Houston, Texas, USA            | Q16555             |
+|    146640 | Michel Caccia           | Brunoy, France                 | Q212541            |
+|   1345779 | Alexander-Klaus Stecher | Rosenheim, Germany             | Q4007              |
+|   1079343 | Friedemann Schreiter    | Jahnsbach, Germany             | Q1678566           |
+|   1037287 | Sam Pinto               | Parañaque, Philippines         | Q17182             |
+|   1293595 | Carlos Blanco           | Gijón, Spain                   | Q12273             |
++-----------+-------------------------+--------------------------------+--------------------+
++--------------------------------------------------------------------------------------+
+| section                                                                              |
++--------------------------------------------------------------------------------------+
+| === 7. Joan Gregson (168765), Howie Carr (1265047), Pierre Decourcelle (1325922) === |
++--------------------------------------------------------------------------------------+
++-----------+--------------------+-------------+----------+---------------+---------------+--------+------------------------------+--------------------+------------+-------+
+| ID_PERSON | NAME               | ID_WIKIDATA | IDENTITY | DATE_OF_DEATH | DATE_OF_BIRTH | GENDER | PLACE_OF_BIRTH               | PLACE_OF_BIRTH_QID | POPULARITY | ADULT |
++-----------+--------------------+-------------+----------+---------------+---------------+--------+------------------------------+--------------------+------------+-------+
+|    168765 | Joan Gregson       | Q42313814   | P4985    | 2025-06-06    | NULL          |   NULL | NULL                         | NULL               |       16.5 |     0 |
+|   1265047 | Howie Carr         | Q5921979    | P4985    | NULL          | 1952-01-17    |      2 | Portland, Massachusetts, USA | Q49201             |     0.0218 |     0 |
+|   1325922 | Pierre Decourcelle | Q462613     | P4985    | 1926-10-10    | 1856-01-25    |      2 | NULL                         | Q2921926           |     0.0982 |     0 |
++-----------+--------------------+-------------+----------+---------------+---------------+--------+------------------------------+--------------------+------------+-------+

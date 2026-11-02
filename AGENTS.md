@@ -14,7 +14,7 @@ Part of **Agent BBB** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor
 
 ## Where things live (file → role)
 
-See README § Repository layout. Non-obvious points: the notebooks are the only locally-run code, and all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in `.py` modules. The `-movies01` / `-series01` / `-persons01` notebooks are legacy; the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's Day of Death from `preprocess/deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the field, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
+See README § Repository layout. Non-obvious points: the notebooks are the only locally-run code, and all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in `.py` modules. The `-movies01` / `-series01` / `-persons01` notebooks are legacy; the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's primary facts (Day of Death, and since 2026-11-02 Birthday, Gender, Place of Birth) from `preprocess/primary-facts-person-fix.sql`, which replaced `deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the fields, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
 
 ## Code conventions
 
@@ -30,6 +30,7 @@ See README § Repository layout. Non-obvious points: the notebooks are the only 
 - Every write attempt is traced by `log_wikidata_write` (format: README § Logs). Each early `return False` of `set_wikidata_id` / `clear_wikidata_id` carries its own `trace(outcome, reason)`; a new exit path needs one, and a new reason must join the closed vocabulary rather than be invented in place. `append_log_event` swallows its errors on purpose. Log values go through `log_value` / `log_int` (pandas `numpy.int64` and `NaN` are not JSON).
 - Any new skip path must be genuinely rare: `MAX_CONSECUTIVE_SKIPS` stops the run.
 - Some log/error strings are in French; that is expected.
+- The `primary_facts` tab saves through a background request and keeps the page, so after Save never wait for the page to go stale: it cost the full 15 s timeout on every death date until 1.0.13. `wait_for_save` waits for the page's own non-GET request to answer, then the page is reloaded to read the value back.
 
 ## Configuration & secrets
 
@@ -45,15 +46,17 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 - Every run **modifies live records on a third-party site** (writes, and in conflict cases clears, QIDs on TMDb). Run it deliberately and interactively from Jupyter while watching the browser; never wire it into CI/cron. Respect TMDb's ToS and rate limits.
 - `clear_wikidata_id` is destructive: verify the `ID_*_ERASE_WIKIDATA_ID` rows of a fresh CSV before running.
 - The `*_replace` datasets overwrite valid data: read the CSV and watch the first run of each.
-- The death-date notebook starts with `DRY_RUN = True` (pages checked, nothing saved). Read a dry run before turning it off, then start with a small `MAX_ROWS`. It never writes over an existing Day of Death, and skips every person a previous real run already wrote, found locked or found set (read back from `logs/selenium-tmdb-deathday-*.log`).
+- The primary facts notebook starts with `DRY_RUN = True` (pages checked, nothing saved). Read a dry run before turning it off, then start with a small `MAX_ROWS`. An empty CSV cell means "leave the field alone", never "clear it"; a field already filled or locked on the live page is skipped alone; every (person, field) a previous real run wrote, found locked or found set is skipped (read back from `logs/selenium-tmdb-deathday-*.log`, old `deathday_write` events included).
+- The export only fills a field when Wikidata points back at the TMDb record (P4985 or P345): a namesake QID would otherwise put a stranger's birthday and birthplace on the page. Keep that guard on every field added later.
+- TMDb throttles the edit pages: after about 1,500 edits on 2026-11-02 every page answered "Too Many Requests (429)" for hours, which the 1.0.13 robot read as `field_not_found`. `open_primary_facts_patiently` waits (`THROTTLE_WAITS`), never counts a 429 as a skip, and stops the run with the cursor stored.
 - Moderator-**locked** fields are skipped on purpose; never add code to force them.
 - Crash recovery (bounded by `BROWSER_RESTART_ATTEMPTS`) does not make the run unattended: a CAPTCHA needs a human, and each restart replays the current record live.
 - A record without an English translation redirects to `/translate/...`; `create_english_translation` then makes a real write to TMDB.
 
 ---
 
-**Last Updated**: 2026-10-31
-**Current Version**: 1.0.12
+**Last Updated**: 2026-11-02
+**Current Version**: 1.0.14
 
 ## Backlog (Nestor second-brain)
 
