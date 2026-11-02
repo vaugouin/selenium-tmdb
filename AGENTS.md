@@ -48,6 +48,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 - The `*_replace` datasets overwrite valid data: read the CSV and watch the first run of each.
 - The primary facts notebook starts with `DRY_RUN = True` (pages checked, nothing saved). Read a dry run before turning it off, then start with a small `MAX_ROWS`. An empty CSV cell means "leave the field alone", never "clear it"; a field already filled or locked on the live page is skipped alone; every (person, field) a previous real run wrote, found locked or found set is skipped (read back from `logs/selenium-tmdb-deathday-*.log`, old `deathday_write` events included).
 - The export only fills a field when Wikidata points back at the TMDb record (P4985 or P345): a namesake QID would otherwise put a stranger's birthday and birthplace on the page. Keep that guard on every field added later.
+- The daily CSVs write an SQL NULL as the text `NULL` (`f_csv_escape_value` in `preprocess/selenium-tmdb.py`), not as an empty cell: a notebook reading a text column must treat `NULL` as empty, or it writes the word on TMDb (`parse_target`).
 - TMDb throttles the edit pages: after about 1,500 edits on 2026-11-02 every page answered "Too Many Requests (429)" for hours, which the 1.0.13 robot read as `field_not_found`. `open_primary_facts_patiently` waits (`THROTTLE_WAITS`), never counts a 429 as a skip, and stops the run with the cursor stored.
 - Moderator-**locked** fields are skipped on purpose; never add code to force them.
 - Crash recovery (bounded by `BROWSER_RESTART_ATTEMPTS`) does not make the run unattended: a CAPTCHA needs a human, and each restart replays the current record live.
@@ -56,7 +57,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 ---
 
 **Last Updated**: 2026-11-02
-**Current Version**: 1.0.14
+**Current Version**: 1.0.15
 
 ## Backlog (Nestor second-brain)
 
