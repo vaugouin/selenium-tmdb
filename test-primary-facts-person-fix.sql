@@ -5,6 +5,7 @@ before the first run (2026-11-02). NOT EXECUTED BY THE DAILY EXPORT (repo root).
 The SELECT below is a copy of the export without its ORDER BY: keep them in step while testing.
 */
 CREATE TEMPORARY TABLE tpf AS
+SELECT x.* FROM (
 SELECT
 f.ID_PERSON AS ID_PERSON,
 f.NAME AS NAME,
@@ -19,31 +20,39 @@ CASE WHEN f.BIRTH_YMD IS NOT NULL AND (f.DEATH_YMD IS NULL OR f.BIRTH_YMD < f.DE
      THEN CONCAT(f.BIRTH_YMD DIV 10000, '-', LPAD(f.BIRTH_YMD DIV 100 MOD 100, 2, '0'), '-', LPAD(f.BIRTH_YMD MOD 100, 2, '0'))
 END AS DATE_OF_BIRTH,
 CASE f.GENDER_QID WHEN 'Q6581072' THEN 1 WHEN 'Q6581097' THEN 2 WHEN 'Q48270' THEN 3 END AS GENDER,
+/* GUARD 5: no string at all rather than a doubtful one. */
 CASE WHEN f.PLACE_QID IS NOT NULL AND pl.LABEL_EN IS NOT NULL AND pl.LABEL_EN <> ''
           AND f.COUNTRY_QID IS NOT NULL AND f.COUNTRY_QID <> f.PLACE_QID
           AND co.LABEL_EN IS NOT NULL AND co.LABEL_EN <> ''
+          AND f.PLACE_IS_COUNTRY = 0 AND f.COUNTRY_DISSOLVED = 0
           AND (f.REGION_QID IS NULL OR f.REGION_QID <> f.PLACE_QID)
+          /* In the four countries written with a region, the region must be found
+             (or be the place itself: "California, USA", "Washington, D.C., USA"). */
+          AND (f.COUNTRY_QID NOT IN ('Q30', 'Q145', 'Q16', 'Q408')
+               OR f.REGION_QID IS NOT NULL OR f.PLACE_IS_REGION = 1)
      THEN CONCAT_WS(', ', pl.LABEL_EN, rg.LABEL_EN,
-                    CASE f.COUNTRY_QID WHEN 'Q30' THEN 'USA' WHEN 'Q145' THEN 'UK' ELSE co.LABEL_EN END)
+                    CASE f.COUNTRY_QID WHEN 'Q30' THEN 'USA' WHEN 'Q145' THEN 'UK'
+                                       WHEN 'Q148' THEN 'China' WHEN 'Q29999' THEN 'Netherlands'
+                                       ELSE co.LABEL_EN END)
 END AS PLACE_OF_BIRTH,
 f.PLACE_QID AS PLACE_OF_BIRTH_QID,
 f.POPULARITY AS POPULARITY,
 f.ADULT AS ADULT
 FROM (
   SELECT g.*,
-  /* State, province or constituent country of the place, one or two P131 levels up,
-     for the four countries where TMDb writes it. */
-  CASE WHEN g.COUNTRY_QID IN ('Q30', 'Q145', 'Q16', 'Q408') THEN COALESCE(
+  /* State, province or constituent country of the place, one to three P131 levels up
+     (city, county, state), for the four countries where TMDb writes it. */
+  CASE WHEN g.COUNTRY_QID IN ('Q30', 'Q145', 'Q16', 'Q408') AND g.PLACE_IS_REGION = 0 THEN COALESCE(
     ( SELECT av.ID_ITEM
       FROM T_WC_WIKIDATA_STATEMENT a
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
       WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
         AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
-        AND ( av.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26')
+        AND ( av.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
                           WHERE c.ID_WIKIDATA = av.ID_ITEM AND c.ID_PROPERTY = 'P31'
-                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411') ) )
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411', 'Q14192252') ) )
       ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT
       LIMIT 1 ),
     ( SELECT bv.ID_ITEM
@@ -54,14 +63,38 @@ FROM (
       WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
         AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
         AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
-        AND ( bv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26')
+        AND ( bv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
                           WHERE c.ID_WIKIDATA = bv.ID_ITEM AND c.ID_PROPERTY = 'P31'
-                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411') ) )
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411', 'Q14192252') ) )
       ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT, b.ID_STATEMENT
+      LIMIT 1 ),
+    ( SELECT dv.ID_ITEM
+      FROM T_WC_WIKIDATA_STATEMENT a
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+      INNER JOIN T_WC_WIKIDATA_STATEMENT b ON b.ID_WIKIDATA = av.ID_ITEM AND b.ID_PROPERTY = 'P131'
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE bv ON bv.ID_STATEMENT = b.ID_STATEMENT
+      INNER JOIN T_WC_WIKIDATA_STATEMENT d ON d.ID_WIKIDATA = bv.ID_ITEM AND d.ID_PROPERTY = 'P131'
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE dv ON dv.ID_STATEMENT = d.ID_STATEMENT
+      WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
+        AND (d.`RANK` IS NULL OR d.`RANK` <> 'deprecated') AND COALESCE(d.DELETED, 0) = 0
+        AND ( dv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
+              OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
+                          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
+                          WHERE c.ID_WIKIDATA = dv.ID_ITEM AND c.ID_PROPERTY = 'P31'
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411', 'Q14192252') ) )
+      ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT, b.ID_STATEMENT, d.ID_STATEMENT
       LIMIT 1 ) ) END AS REGION_QID
   FROM (
+    SELECT h.*,
+    /* A dissolved country (P576) is history, not an address: "Tokyo City, Empire of Japan". */
+    CASE WHEN EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT z
+                       WHERE z.ID_WIKIDATA = h.COUNTRY_QID AND z.ID_PROPERTY = 'P576'
+                         AND (z.`RANK` IS NULL OR z.`RANK` <> 'deprecated') ) THEN 1 ELSE 0 END AS COUNTRY_DISSOLVED
+    FROM (
     SELECT e.*,
     /* Country of the place: one distinct P17. */
     ( SELECT CASE WHEN COUNT(DISTINCT kv.ID_ITEM) = 1 THEN MIN(kv.ID_ITEM) END
@@ -69,6 +102,15 @@ FROM (
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE kv ON kv.ID_STATEMENT = k.ID_STATEMENT
       WHERE k.ID_WIKIDATA = e.PLACE_QID AND k.ID_PROPERTY = 'P17'
         AND (k.`RANK` IS NULL OR k.`RANK` <> 'deprecated') AND COALESCE(k.DELETED, 0) = 0 ) AS COUNTRY_QID
+    , CASE WHEN ( e.PLACE_QID IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
+              OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
+                          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
+                          WHERE c.ID_WIKIDATA = e.PLACE_QID AND c.ID_PROPERTY = 'P31'
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411', 'Q14192252') ) ) THEN 1 ELSE 0 END AS PLACE_IS_REGION
+    , CASE WHEN EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
+                         INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
+                         WHERE c.ID_WIKIDATA = e.PLACE_QID AND c.ID_PROPERTY = 'P31'
+                           AND cv.ID_ITEM IN ('Q6256', 'Q3624078') ) THEN 1 ELSE 0 END AS PLACE_IS_COUNTRY
     FROM (
       SELECT
       P.ID_PERSON, P.NAME, P.ID_WIKIDATA, P.POPULARITY, P.ADULT,
@@ -158,13 +200,15 @@ FROM (
                            AND (td.YEAR_VALUE * 10000 + td.MONTH_VALUE * 100 + td.DAY_VALUE)
                                <> (YEAR(P.DEATHDAY) * 10000 + MONTH(P.DEATHDAY) * 100 + DAY(P.DEATHDAY)) )
     ) e
+    ) h
   ) g
 ) f
 LEFT JOIN T_WC_WIKIDATA_ITEM pl ON pl.ID_WIKIDATA = f.PLACE_QID
 LEFT JOIN T_WC_WIKIDATA_ITEM co ON co.ID_WIKIDATA = f.COUNTRY_QID
 LEFT JOIN T_WC_WIKIDATA_ITEM rg ON rg.ID_WIKIDATA = f.REGION_QID
-WHERE f.DEATH_YMD IS NOT NULL OR f.BIRTH_YMD IS NOT NULL
-   OR f.GENDER_QID IN ('Q6581072', 'Q6581097', 'Q48270') OR f.PLACE_QID IS NOT NULL
+) x
+WHERE x.DATE_OF_DEATH IS NOT NULL OR x.DATE_OF_BIRTH IS NOT NULL
+   OR x.GENDER IS NOT NULL OR x.PLACE_OF_BIRTH IS NOT NULL
 ;
 
 SELECT '=== 1. Rows and fillable cells ===' AS section;

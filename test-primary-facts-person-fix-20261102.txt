@@ -1,0 +1,214 @@
+-- test-primary-facts-person-fix.sql
+-- run on vaugouindb (container damp-vaugouin-com-mariadb-1) at 2026-11-02 17:44:55 +0100
+--
++------------------------------------+
+| section                            |
++------------------------------------+
+| === 1. Rows and fillable cells === |
++------------------------------------+
++---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
+| rows_exported | non_adult | deaths | births | genders | places | places_unbuilt | rows_with_nothing |
++---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
+|        100433 |     99208 |  18873 |  45991 |   53924 |  42803 |          26049 |             10259 |
++---------------+-----------+--------+--------+---------+--------+----------------+-------------------+
++---------------------------+
+| section                   |
++---------------------------+
+| === 2. Identity proof === |
++---------------------------+
++----------+-------+
+| IDENTITY | n     |
++----------+-------+
+| P345     |  5400 |
+| P4985    | 95033 |
++----------+-------+
++--------------------------+
+| section                  |
++--------------------------+
+| === 3. Gender values === |
++--------------------------+
++--------+-------+
+| GENDER | n     |
++--------+-------+
+|   NULL | 46509 |
+|      1 | 15387 |
+|      2 | 38507 |
+|      3 |    30 |
++--------+-------+
++---------------------------------+
+| section                         |
++---------------------------------+
+| === 4. 40 most popular rows === |
++---------------------------------+
++-----------+-----------------------+-------------+----------+---------------+---------------+--------+-----------------------------------------+-------+
+| ID_PERSON | NAME                  | ID_WIKIDATA | IDENTITY | DATE_OF_DEATH | DATE_OF_BIRTH | GENDER | PLACE_OF_BIRTH                          | POP   |
++-----------+-----------------------+-------------+----------+---------------+---------------+--------+-----------------------------------------+-------+
+|   3012621 | Shruti Marathe        | Q7504349    | P4985    | NULL          | 1990-10-10    |   NULL | Pune, India                             | 39.83 |
+|    106245 | Linda Kerridge        | Q3241354    | P4985    | NULL          | NULL          |   NULL | Wagga Wagga, New South Wales, Australia | 25.44 |
+|   1628691 | Lauren Hammersley     | Q6500243    | P4985    | NULL          | 1971-01-08    |   NULL | NULL                                    | 20.00 |
+|   3317063 | Alona Hertha          | Q135218294  | P345     | NULL          | 1987-01-31    |   NULL | NULL                                    | 18.10 |
+|   1647434 | Rahul Sankrityan      | Q58215401   | P4985    | NULL          | NULL          |      2 | NULL                                    | 18.04 |
+|   2244437 | Stella Fyrogeni       | Q4949301    | P4985    | NULL          | 1968-11-26    |   NULL | NULL                                    | 17.61 |
+|    168765 | Joan Gregson          | Q42313814   | P4985    | 2025-06-06    | NULL          |   NULL | NULL                                    | 16.50 |
+|    133672 | Carole Tredille       | Q2939916    | P4985    | NULL          | NULL          |   NULL | Savoy, France                           | 15.12 |
+|   1581416 | Fernando Kliche       | Q5859746    | P4985    | 2026-07-03    | NULL          |   NULL | NULL                                    | 14.21 |
+|   1231105 | Will McDonald         | Q6167498    | P4985    | NULL          | NULL          |   NULL | Sydney, New South Wales, Australia      | 13.19 |
+|   1140180 | Marianne Aubert       | Q115977961  | P4985    | 1994-09-10    | NULL          |   NULL | NULL                                    | 12.69 |
+|   2290713 | Yuriy Lakhin          | Q4255330    | P4985    | 2021-01-27    | NULL          |   NULL | NULL                                    | 12.58 |
+|   1778774 | Dan Davies            | Q5213353    | P4985    | NULL          | 1965-12-25    |   NULL | Milwaukee, Wisconsin, USA               | 12.21 |
+|   1919374 | Tarsem Jassar         | Q25160398   | P4985    | NULL          | 1986-07-04    |   NULL | NULL                                    | 11.68 |
+|   2502637 | Mariana Martix        | Q124352661  | P4985    | NULL          | 1997-01-05    |   NULL | NULL                                    | 11.28 |
+|   1719354 | Matt Harris           | Q108325204  | P4985    | NULL          | NULL          |      2 | NULL                                    | 11.08 |
+|   3354787 | Sky Arndt             | Q138498496  | P4985    | NULL          | NULL          |   NULL | NULL                                    | 10.88 |
+|   1554293 | Todd Newton           | Q7812546    | P4985    | NULL          | NULL          |      2 | NULL                                    | 10.36 |
+|   1643544 | Shaalin Zoya          | Q15991592   | P4985    | NULL          | 1997-02-22    |   NULL | NULL                                    | 10.19 |
+|   3008232 | Ushasi Ray            | Q55819347   | P4985    | NULL          | 1993-10-17    |   NULL | NULL                                    |  9.97 |
+|   1639965 | Kunio Fujii           | Q11622894   | P4985    | 2025-10-12    | NULL          |   NULL | NULL                                    |  9.82 |
+|   1083202 | Luigi Petrini         | Q15629596   | P4985    | 2010-06-12    | 1934-12-07    |      2 | NULL                                    |  9.82 |
+|   2248785 | Sy Smith              | Q7659423    | P4985    | NULL          | 1978-02-18    |   NULL | NULL                                    |  9.78 |
+|   1547349 | Tabitha Taylor        | Q30944258   | P345     | NULL          | 1974-04-04    |   NULL | NULL                                    |  9.09 |
+|   2088294 | Lillian Ducey         | Q60902485   | P4985    | 1952-12-09    | 1878-11-26    |   NULL | NULL                                    |  9.07 |
+|   1573481 | Shohei Nanba          | Q17209514   | P4985    | NULL          | NULL          |   NULL | Okayama Prefecture, Japan               |  8.96 |
+|   1741124 | Guruprasad            | Q5620533    | P4985    | 2024-10-30    | NULL          |   NULL | NULL                                    |  8.93 |
+|   1626320 | Nikos Papanastasiou   | Q85520756   | P4985    | NULL          | 1935-12-22    |   NULL | NULL                                    |  8.87 |
+|   1186980 | Makoto Okunaka        | Q11445604   | P4985    | NULL          | NULL          |   NULL | Saitama Prefecture, Japan               |  8.72 |
+|   1230406 | Shigeki Kagemaru      | Q11488079   | P4985    | NULL          | NULL          |   NULL | Saitama Prefecture, Japan               |  8.46 |
+|   1029209 | Keisuke Sohma         | Q1055173    | P4985    | NULL          | NULL          |   NULL | Kanagawa Prefecture, Japan              |  8.45 |
+|    936203 | Gwynne Howell         | Q3122600    | P4985    | NULL          | NULL          |      2 | NULL                                    |  8.43 |
+|   1610022 | Gail Force            | Q541876     | P4985    | NULL          | NULL          |   NULL | Los Angeles County, California, USA     |  8.36 |
+|   1061054 | Julian Black Antelope | Q64886373   | P4985    | NULL          | NULL          |   NULL | NULL                                    |  8.34 |
+|   2409640 | John Treleaven        | Q11928242   | P4985    | NULL          | 1950-06-10    |   NULL | NULL                                    |  8.29 |
+|   2057152 | Galen Hooks           | Q5518354    | P4985    | NULL          | 1985-11-19    |   NULL | NULL                                    |  8.26 |
+|   1663674 | Vera Cherny           | Q63302218   | P4985    | NULL          | 1981-07-01    |   NULL | NULL                                    |  8.23 |
+|   1239914 | Emily Richard         | Q3052384    | P4985    | 2024-10-02    | NULL          |   NULL | NULL                                    |  8.11 |
+|   1001930 | Roberta Pedon         | Q7351530    | P4985    | 1982-07-30    | NULL          |   NULL | NULL                                    |  8.06 |
+|    129705 | Saki Kagami           | Q3275511    | P4985    | NULL          | NULL          |   NULL | Sakura, Japan                           |  7.95 |
++-----------+-----------------------+-------------+----------+---------------+---------------+--------+-----------------------------------------+-------+
++--------------------------------------------+
+| section                                    |
++--------------------------------------------+
+| === 5. Place strings: 60 most frequent === |
++--------------------------------------------+
++-----------------------------------------+------+
+| PLACE_OF_BIRTH                          | n    |
++-----------------------------------------+------+
+| New York City, New York, USA            | 1292 |
+| Los Angeles, California, USA            |  903 |
+| Tokyo, Japan                            |  796 |
+| Chicago, Illinois, USA                  |  480 |
+| Buenos Aires, Argentina                 |  433 |
+| Madrid, Spain                           |  424 |
+| Montreal, Quebec, Canada                |  393 |
+| Brooklyn, New York, USA                 |  384 |
+| Barcelona, Spain                        |  349 |
+| Mexico City, Mexico                     |  338 |
+| Philadelphia, Pennsylvania, USA         |  316 |
+| Toronto, Ontario, Canada                |  296 |
+| Sydney, New South Wales, Australia      |  236 |
+| San Francisco, California, USA          |  216 |
+| Melbourne, Victoria, Australia          |  200 |
+| Manila, Philippines                     |  180 |
+| Detroit, Michigan, USA                  |  169 |
+| Washington, D.C., USA                   |  159 |
+| California, USA                         |  156 |
+| Rio de Janeiro, Brazil                  |  150 |
+| Kanagawa Prefecture, Japan              |  142 |
+| Osaka Prefecture, Japan                 |  139 |
+| St. Louis, Missouri, USA                |  135 |
+| Vancouver, British Columbia, Canada     |  133 |
+| The Bronx, New York, USA                |  124 |
+| Ostrava, Czech Republic                 |  122 |
+| Lima, Peru                              |  118 |
+| Houston, Texas, USA                     |  117 |
+| Seattle, Washington, USA                |  113 |
+| Cleveland, Ohio, USA                    |  112 |
+| Baltimore, Maryland, USA                |  107 |
+| São Paulo, Brazil                       |  107 |
+| Pittsburgh, Pennsylvania, USA           |  104 |
+| Dallas, Texas, USA                      |  103 |
+| Manhattan, New York, USA                |  101 |
+| Saitama Prefecture, Japan               |  100 |
+| New Orleans, Louisiana, USA             |   98 |
+| Atlanta, Georgia, USA                   |   98 |
+| Miami, Florida, USA                     |   96 |
+| San Diego, California, USA              |   94 |
+| New York, USA                           |   90 |
+| New Jersey, USA                         |   86 |
+| Fukuoka Prefecture, Japan               |   76 |
+| Zlín, Czech Republic                    |   75 |
+| Queens, New York, USA                   |   74 |
+| Chiba Prefecture, Japan                 |   74 |
+| Minneapolis, Minnesota, USA             |   73 |
+| Gothenburg, Sweden                      |   72 |
+| Marseille, France                       |   71 |
+| Osaka, Japan                            |   68 |
+| Hyōgo Prefecture, Japan                 |   67 |
+| Ottawa, Ontario, Canada                 |   67 |
+| Santa Monica, California, USA           |   66 |
+| Quebec City, Canada                     |   66 |
+| Taipei, Taiwan                          |   66 |
+| Netherlands, Kingdom of the Netherlands |   65 |
+| Liverpool, UK                           |   65 |
+| Yokohama, Japan                         |   64 |
+| Auckland, New Zealand                   |   63 |
+| Portland, Oregon, USA                   |   62 |
++-----------------------------------------+------+
++-------------------------------------+
+| section                             |
++-------------------------------------+
+| === 6. Place strings: random 40 === |
++-------------------------------------+
++-----------+-------------------------+---------------------------------------------+--------------------+
+| ID_PERSON | NAME                    | PLACE_OF_BIRTH                              | PLACE_OF_BIRTH_QID |
++-----------+-------------------------+---------------------------------------------+--------------------+
+|    122982 | Louise Keaton           | Maine, USA                                  | Q724               |
+|   1709908 | Naděžda Kreclová        | Kolín, Czech Republic                       | Q470369            |
+|   2383026 | Natàlia Regàs           | Barcelona, Spain                            | Q1492              |
+|   1449267 | Karin Steinberger       | Gräfelfing, Germany                         | Q504854            |
+|   1276144 | Yves Jansen             | Aarau, Switzerland                          | Q14274             |
+|   1287885 | Emilie Hráská           | Rozbělesy, Czech Republic                   | Q12049933          |
+|   1833329 | Stephen Robert Morse    | Queens, New York, USA                       | Q18424             |
+|    188744 | Sarah Kennedy           | Coquille, USA                               | Q991454            |
+|   1379294 | Charles Tutelier        | Brussels, Belgium                           | Q239               |
+|     10908 | Peter Francis           | Holderness, UK                              | Q731334            |
+|   1202729 | A.B. 'Banjo' Paterson   | Orange, New South Wales, Australia          | Q580973            |
+|   5171018 | Reinhard Schneider      | Gelsenkirchen, Germany                      | Q2765              |
+|   1297535 | Rosa Vergés             | Barcelona, Spain                            | Q1492              |
+|   2282830 | Koyoharu Gotouge        | Fukuoka Prefecture, Japan                   | Q123258            |
+|     49353 | Jack Dodson             | Pittsburgh, Pennsylvania, USA               | Q1342              |
+|   1239826 | Mayumi Yamabuki         | Tokyo City, Empire of Japan                 | Q1207735           |
+|   2109254 | Tao Gu                  | Wenchuan County, People's Republic of China | Q1015140           |
+|   1089958 | Johanna Strömberg       | Vänersborg, Sweden                          | Q54759             |
+|    234402 | Michael Grønnemose      | Odense, Denmark                             | Q25331             |
+|    928872 | Vijay Anand             | Gurdaspur, India                            | Q1707629           |
+|   1243690 | Chat Silayan            | Manila, Philippines                         | Q1461              |
+|     68407 | Petronius               | Massilia, Ancient Rome                      | Q15141121          |
+|   3157015 | Lucia Lucas             | Sacramento, California, USA                 | Q18013             |
+|   1279006 | Lawrence Chenault       | Mount Sterling, Kentucky, USA               | Q3182166           |
+|     76356 | Kliph Scurlock          | Topeka, USA                                 | Q41057             |
+|   1487774 | Mario Filio             | Mexico City, Mexico                         | Q1489              |
+|   1858663 | Andréa Marquee          | São Paulo, Brazil                           | Q174               |
+|   1304853 | Paul Grignon            | Toronto, Ontario, Canada                    | Q172               |
+|   1211992 | Victor Lobl             | New York City, New York, USA                | Q60                |
+|   1197567 | Andrew Horn             | New York City, New York, USA                | Q60                |
+|   1989316 | Chinaka Hodge           | Oakland, California, USA                    | Q17042             |
+|    126010 | Terry Huntingdon        | Mount Shasta, California, USA               | Q987106            |
+|   1482796 | Haakon Sandøy           | Tananger, Norway                            | Q2211190           |
+|   1388781 | Victoria Spivey         | Houston, Texas, USA                         | Q16555             |
+|   2319090 | Julieta Bracho          | Mexico City, Mexico                         | Q1489              |
+|     35713 | Danny Padilla           | Rochester, New York, USA                    | Q49218             |
+|    136319 | Dave Naz                | Beverly Hills, California, USA              | Q127856            |
+|   1306285 | Lionel Villeneuve       | Roberval, Canada                            | Q141954            |
+|   5576166 | Florence Randrianarisoa | Querfurt, Germany                           | Q518204            |
+|   1050478 | Amiya Chakrabarty       | Rangpur, Bangladesh                         | Q994514            |
++-----------+-------------------------+---------------------------------------------+--------------------+
++----------------------------------+
+| section                          |
++----------------------------------+
+| === 7. Joan Gregson (168765) === |
++----------------------------------+
++-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
+| ID_PERSON | NAME         | ID_WIKIDATA | IDENTITY | DATE_OF_DEATH | DATE_OF_BIRTH | GENDER | PLACE_OF_BIRTH | PLACE_OF_BIRTH_QID | POPULARITY | ADULT |
++-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
+|    168765 | Joan Gregson | Q42313814   | P4985    | 2025-06-06    | NULL          |   NULL | NULL           | NULL               |       16.5 |     0 |
++-----------+--------------+-------------+----------+---------------+---------------+--------+----------------+--------------------+------------+-------+
