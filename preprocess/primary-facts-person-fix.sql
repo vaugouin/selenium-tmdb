@@ -28,7 +28,11 @@ GUARDS
    P131 levels up; in those four countries a place whose region is not found is left
    empty. Also left empty: a place that is a country, a dissolved country (P576, "Empire
    of Japan", "Ancient Rome"). Country names TMDb writes short: USA, UK, China,
-   Netherlands. PLACE_OF_BIRTH_QID is kept in the CSV for review.
+   Netherlands. A label starting in lower case is a street or a district, not a town
+   ("boulevard Saint-Martin"): left empty. Country (P17) and region (P131) read only the
+   best values (IS_BEST_VALUE), so a historical one does not win: the first test gave
+   "Portland, Massachusetts" for Portland, Maine (part of Massachusetts until 1820).
+   PLACE_OF_BIRTH_QID is kept in the CSV for review.
 6. Deprecated or deleted statements are ignored, as everywhere in this repo.
 
 Dates are compared as YEAR*10000 + MONTH*100 + DAY: DATE_START is not filled for these rows.
@@ -59,6 +63,7 @@ END AS DATE_OF_BIRTH,
 CASE f.GENDER_QID WHEN 'Q6581072' THEN 1 WHEN 'Q6581097' THEN 2 WHEN 'Q48270' THEN 3 END AS GENDER,
 /* GUARD 5: no string at all rather than a doubtful one. */
 CASE WHEN f.PLACE_QID IS NOT NULL AND pl.LABEL_EN IS NOT NULL AND pl.LABEL_EN <> ''
+          AND LEFT(pl.LABEL_EN, 1) COLLATE utf8mb4_bin <> LOWER(LEFT(pl.LABEL_EN, 1)) COLLATE utf8mb4_bin
           AND f.COUNTRY_QID IS NOT NULL AND f.COUNTRY_QID <> f.PLACE_QID
           AND co.LABEL_EN IS NOT NULL AND co.LABEL_EN <> ''
           AND f.PLACE_IS_COUNTRY = 0 AND f.COUNTRY_DISSOLVED = 0
@@ -84,7 +89,7 @@ FROM (
       FROM T_WC_WIKIDATA_STATEMENT a
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
       WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
-        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0 AND COALESCE(a.IS_BEST_VALUE, 1) = 1
         AND ( av.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
@@ -98,8 +103,8 @@ FROM (
       INNER JOIN T_WC_WIKIDATA_STATEMENT b ON b.ID_WIKIDATA = av.ID_ITEM AND b.ID_PROPERTY = 'P131'
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE bv ON bv.ID_STATEMENT = b.ID_STATEMENT
       WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
-        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
-        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0 AND COALESCE(a.IS_BEST_VALUE, 1) = 1
+        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0 AND COALESCE(b.IS_BEST_VALUE, 1) = 1
         AND ( bv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
@@ -115,9 +120,9 @@ FROM (
       INNER JOIN T_WC_WIKIDATA_STATEMENT d ON d.ID_WIKIDATA = bv.ID_ITEM AND d.ID_PROPERTY = 'P131'
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE dv ON dv.ID_STATEMENT = d.ID_STATEMENT
       WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
-        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
-        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
-        AND (d.`RANK` IS NULL OR d.`RANK` <> 'deprecated') AND COALESCE(d.DELETED, 0) = 0
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0 AND COALESCE(a.IS_BEST_VALUE, 1) = 1
+        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0 AND COALESCE(b.IS_BEST_VALUE, 1) = 1
+        AND (d.`RANK` IS NULL OR d.`RANK` <> 'deprecated') AND COALESCE(d.DELETED, 0) = 0 AND COALESCE(d.IS_BEST_VALUE, 1) = 1
         AND ( dv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
@@ -138,7 +143,7 @@ FROM (
       FROM T_WC_WIKIDATA_STATEMENT k
       INNER JOIN T_WC_WIKIDATA_ITEM_VALUE kv ON kv.ID_STATEMENT = k.ID_STATEMENT
       WHERE k.ID_WIKIDATA = e.PLACE_QID AND k.ID_PROPERTY = 'P17'
-        AND (k.`RANK` IS NULL OR k.`RANK` <> 'deprecated') AND COALESCE(k.DELETED, 0) = 0 ) AS COUNTRY_QID
+        AND (k.`RANK` IS NULL OR k.`RANK` <> 'deprecated') AND COALESCE(k.DELETED, 0) = 0 AND COALESCE(k.IS_BEST_VALUE, 1) = 1 ) AS COUNTRY_QID
     , CASE WHEN ( e.PLACE_QID IN ('Q21', 'Q22', 'Q25', 'Q26', 'Q61')
               OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
                           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
