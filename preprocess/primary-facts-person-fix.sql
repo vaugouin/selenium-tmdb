@@ -1,0 +1,200 @@
+/*
+TMDb persons whose primary facts (Day of Death, Birthday, Gender, Place of Birth) are empty
+on TMDb while Wikidata knows them. CSV export of this query feeds the persons_primary_facts
+dataset of selenium-tmdb-deathday.ipynb (2026-11-02; replaces deathday-person-fix.sql, which
+fed the first death-date run of the same day).
+
+ONE ROW PER PERSON, ONE COLUMN PER FIELD. An empty cell means "leave this field alone",
+never "clear it": a column is filled only when Wikidata has one clean value AND the field is
+empty in our TMDb copy. The notebook checks the live page again before writing any field.
+
+GUARDS
+1. Identity of the QID, required for every field. TMDb sometimes carries the QID of a
+   namesake (first death measure: "Samuel Braun" dead in 1668; Joan Gregson, a Canadian
+   actress, with a Paris birthplace). A row is exported only when Wikidata points back at
+   this TMDb record: P4985 (TMDB person ID) equals ID_PERSON, or P345 (IMDb ID) equals the
+   IMDb ID TMDb holds.
+2. Contradiction: when TMDb already has a birthday (or a death date) and Wikidata has a
+   different day-precision one, the QID is suspect and the whole row is dropped.
+3. Dates: day precision (TIME_PRECISION = 11), Gregorian calendar (Julian dates would be
+   off by ten days or more), one distinct date among non-deprecated statements, year from
+   1800 on, not in the future, birth before death.
+4. Gender: P21 with one distinct value among female (TMDb 1), male (2), non-binary (3).
+   Any other value, or two values, leaves the cell empty. Written only when TMDb has 0.
+5. Place of birth: P19 with one distinct place, which has an English label and one
+   country (P17), and is not the country itself. Written as TMDb writes it:
+   "City, Country", with the state or constituent country for USA, UK, Canada and
+   Australia ("Los Angeles, California, USA", "London, England, UK"), found one or two
+   P131 levels up. PLACE_OF_BIRTH_QID is kept in the CSV for review.
+6. Deprecated or deleted statements are ignored, as everywhere in this repo.
+
+Dates are compared as YEAR*10000 + MONTH*100 + DAY: DATE_START is not filled for these rows.
+Column against column only, no CAST in comparisons (see AGENTS.md, collation); the
+VARCHAR = INT comparisons of guard 1 are numeric on purpose. The CONCAT strings are output only.
+
+Order: most popular first, so a short interactive run covers the most visible records.
+
+⚠ THIS FILE IS EXECUTED EVERY MORNING by preprocess/selenium-tmdb.py through ONE
+cursor.execute(). One statement only. See AGENTS.md, section "SQL files".
+*/
+SELECT
+f.ID_PERSON AS ID_PERSON,
+f.NAME AS NAME,
+f.ID_WIKIDATA AS ID_WIKIDATA,
+f.IDENTITY AS IDENTITY,
+CASE WHEN f.DEATH_YMD IS NOT NULL AND (f.BIRTH_YMD IS NULL OR f.BIRTH_YMD < f.DEATH_YMD)
+          AND (f.TMDB_BIRTH_YMD IS NULL OR f.TMDB_BIRTH_YMD < f.DEATH_YMD)
+     THEN CONCAT(f.DEATH_YMD DIV 10000, '-', LPAD(f.DEATH_YMD DIV 100 MOD 100, 2, '0'), '-', LPAD(f.DEATH_YMD MOD 100, 2, '0'))
+END AS DATE_OF_DEATH,
+CASE WHEN f.BIRTH_YMD IS NOT NULL AND (f.DEATH_YMD IS NULL OR f.BIRTH_YMD < f.DEATH_YMD)
+          AND (f.TMDB_DEATH_YMD IS NULL OR f.BIRTH_YMD < f.TMDB_DEATH_YMD)
+     THEN CONCAT(f.BIRTH_YMD DIV 10000, '-', LPAD(f.BIRTH_YMD DIV 100 MOD 100, 2, '0'), '-', LPAD(f.BIRTH_YMD MOD 100, 2, '0'))
+END AS DATE_OF_BIRTH,
+CASE f.GENDER_QID WHEN 'Q6581072' THEN 1 WHEN 'Q6581097' THEN 2 WHEN 'Q48270' THEN 3 END AS GENDER,
+CASE WHEN f.PLACE_QID IS NOT NULL AND pl.LABEL_EN IS NOT NULL AND pl.LABEL_EN <> ''
+          AND f.COUNTRY_QID IS NOT NULL AND f.COUNTRY_QID <> f.PLACE_QID
+          AND co.LABEL_EN IS NOT NULL AND co.LABEL_EN <> ''
+          AND (f.REGION_QID IS NULL OR f.REGION_QID <> f.PLACE_QID)
+     THEN CONCAT_WS(', ', pl.LABEL_EN, rg.LABEL_EN,
+                    CASE f.COUNTRY_QID WHEN 'Q30' THEN 'USA' WHEN 'Q145' THEN 'UK' ELSE co.LABEL_EN END)
+END AS PLACE_OF_BIRTH,
+f.PLACE_QID AS PLACE_OF_BIRTH_QID,
+f.POPULARITY AS POPULARITY,
+f.ADULT AS ADULT
+FROM (
+  SELECT g.*,
+  /* State, province or constituent country of the place, one or two P131 levels up,
+     for the four countries where TMDb writes it. */
+  CASE WHEN g.COUNTRY_QID IN ('Q30', 'Q145', 'Q16', 'Q408') THEN COALESCE(
+    ( SELECT av.ID_ITEM
+      FROM T_WC_WIKIDATA_STATEMENT a
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+      WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+        AND ( av.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26')
+              OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
+                          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
+                          WHERE c.ID_WIKIDATA = av.ID_ITEM AND c.ID_PROPERTY = 'P31'
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411') ) )
+      ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT
+      LIMIT 1 ),
+    ( SELECT bv.ID_ITEM
+      FROM T_WC_WIKIDATA_STATEMENT a
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+      INNER JOIN T_WC_WIKIDATA_STATEMENT b ON b.ID_WIKIDATA = av.ID_ITEM AND b.ID_PROPERTY = 'P131'
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE bv ON bv.ID_STATEMENT = b.ID_STATEMENT
+      WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+        AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+        AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
+        AND ( bv.ID_ITEM IN ('Q21', 'Q22', 'Q25', 'Q26')
+              OR EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT c
+                          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE cv ON cv.ID_STATEMENT = c.ID_STATEMENT
+                          WHERE c.ID_WIKIDATA = bv.ID_ITEM AND c.ID_PROPERTY = 'P31'
+                            AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411') ) )
+      ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT, b.ID_STATEMENT
+      LIMIT 1 ) ) END AS REGION_QID
+  FROM (
+    SELECT e.*,
+    /* Country of the place: one distinct P17. */
+    ( SELECT CASE WHEN COUNT(DISTINCT kv.ID_ITEM) = 1 THEN MIN(kv.ID_ITEM) END
+      FROM T_WC_WIKIDATA_STATEMENT k
+      INNER JOIN T_WC_WIKIDATA_ITEM_VALUE kv ON kv.ID_STATEMENT = k.ID_STATEMENT
+      WHERE k.ID_WIKIDATA = e.PLACE_QID AND k.ID_PROPERTY = 'P17'
+        AND (k.`RANK` IS NULL OR k.`RANK` <> 'deprecated') AND COALESCE(k.DELETED, 0) = 0 ) AS COUNTRY_QID
+    FROM (
+      SELECT
+      P.ID_PERSON, P.NAME, P.ID_WIKIDATA, P.POPULARITY, P.ADULT,
+      CASE WHEN EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT sv
+                         INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE ev ON ev.ID_STATEMENT = sv.ID_STATEMENT
+                         WHERE sv.ID_WIKIDATA = P.ID_WIKIDATA AND sv.ID_PROPERTY = 'P4985'
+                           AND (sv.`RANK` IS NULL OR sv.`RANK` <> 'deprecated')
+                           AND ev.VALUE_EXTERNAL_ID = P.ID_PERSON )
+           THEN 'P4985' ELSE 'P345' END AS IDENTITY,
+      CASE WHEN P.BIRTHDAY IS NULL THEN NULL
+           ELSE YEAR(P.BIRTHDAY) * 10000 + MONTH(P.BIRTHDAY) * 100 + DAY(P.BIRTHDAY) END AS TMDB_BIRTH_YMD,
+      CASE WHEN P.DEATHDAY IS NULL THEN NULL
+           ELSE YEAR(P.DEATHDAY) * 10000 + MONTH(P.DEATHDAY) * 100 + DAY(P.DEATHDAY) END AS TMDB_DEATH_YMD,
+      CASE WHEN P.DEATHDAY IS NULL AND P.DEATH_YEAR IS NULL THEN
+        ( SELECT CASE WHEN COUNT(DISTINCT tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE) = 1
+                      THEN MIN(tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE) END
+          FROM T_WC_WIKIDATA_STATEMENT s
+          INNER JOIN T_WC_WIKIDATA_TIME_VALUE tv ON tv.ID_STATEMENT = s.ID_STATEMENT
+          WHERE s.ID_WIKIDATA = P.ID_WIKIDATA AND s.ID_PROPERTY = 'P570'
+            AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0
+            AND tv.TIME_PRECISION = 11 AND tv.CALENDAR_MODEL LIKE '%Q1985727'
+            AND tv.YEAR_VALUE >= 1800 AND tv.MONTH_VALUE > 0 AND tv.DAY_VALUE > 0
+            AND (tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE)
+                <= (YEAR(CURDATE()) * 10000 + MONTH(CURDATE()) * 100 + DAY(CURDATE())) )
+      END AS DEATH_YMD,
+      CASE WHEN P.BIRTHDAY IS NULL AND P.BIRTH_YEAR IS NULL THEN
+        ( SELECT CASE WHEN COUNT(DISTINCT tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE) = 1
+                      THEN MIN(tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE) END
+          FROM T_WC_WIKIDATA_STATEMENT s
+          INNER JOIN T_WC_WIKIDATA_TIME_VALUE tv ON tv.ID_STATEMENT = s.ID_STATEMENT
+          WHERE s.ID_WIKIDATA = P.ID_WIKIDATA AND s.ID_PROPERTY = 'P569'
+            AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0
+            AND tv.TIME_PRECISION = 11 AND tv.CALENDAR_MODEL LIKE '%Q1985727'
+            AND tv.YEAR_VALUE >= 1800 AND tv.MONTH_VALUE > 0 AND tv.DAY_VALUE > 0
+            AND (tv.YEAR_VALUE * 10000 + tv.MONTH_VALUE * 100 + tv.DAY_VALUE)
+                <= (YEAR(CURDATE()) * 10000 + MONTH(CURDATE()) * 100 + DAY(CURDATE())) )
+      END AS BIRTH_YMD,
+      CASE WHEN COALESCE(P.GENDER, 0) = 0 THEN
+        ( SELECT CASE WHEN COUNT(DISTINCT gv.ID_ITEM) = 1 THEN MIN(gv.ID_ITEM) END
+          FROM T_WC_WIKIDATA_STATEMENT s
+          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE gv ON gv.ID_STATEMENT = s.ID_STATEMENT
+          WHERE s.ID_WIKIDATA = P.ID_WIKIDATA AND s.ID_PROPERTY = 'P21'
+            AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0 )
+      END AS GENDER_QID,
+      CASE WHEN P.PLACE_OF_BIRTH IS NULL OR P.PLACE_OF_BIRTH = '' THEN
+        ( SELECT CASE WHEN COUNT(DISTINCT pv.ID_ITEM) = 1 THEN MIN(pv.ID_ITEM) END
+          FROM T_WC_WIKIDATA_STATEMENT s
+          INNER JOIN T_WC_WIKIDATA_ITEM_VALUE pv ON pv.ID_STATEMENT = s.ID_STATEMENT
+          WHERE s.ID_WIKIDATA = P.ID_WIKIDATA AND s.ID_PROPERTY = 'P19'
+            AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0 )
+      END AS PLACE_QID
+      FROM T_WC_TMDB_PERSON P
+      WHERE P.ID_WIKIDATA LIKE 'Q%'
+        AND COALESCE(P.DELETED, 0) = 0
+        /* At least one field to fill, before any Wikidata lookup. */
+        AND ( (P.DEATHDAY IS NULL AND P.DEATH_YEAR IS NULL)
+              OR (P.BIRTHDAY IS NULL AND P.BIRTH_YEAR IS NULL)
+              OR COALESCE(P.GENDER, 0) = 0
+              OR P.PLACE_OF_BIRTH IS NULL OR P.PLACE_OF_BIRTH = '' )
+        /* GUARD 1: Wikidata points back at this TMDb record. */
+        AND ( EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT sv
+                       INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE ev ON ev.ID_STATEMENT = sv.ID_STATEMENT
+                       WHERE sv.ID_WIKIDATA = P.ID_WIKIDATA AND sv.ID_PROPERTY = 'P4985'
+                         AND (sv.`RANK` IS NULL OR sv.`RANK` <> 'deprecated')
+                         AND ev.VALUE_EXTERNAL_ID = P.ID_PERSON )
+              OR ( P.ID_IMDB LIKE 'nm%'
+                   AND EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT si
+                                INNER JOIN T_WC_WIKIDATA_EXTERNAL_ID_VALUE iv ON iv.ID_STATEMENT = si.ID_STATEMENT
+                                WHERE si.ID_WIKIDATA = P.ID_WIKIDATA AND si.ID_PROPERTY = 'P345'
+                                  AND (si.`RANK` IS NULL OR si.`RANK` <> 'deprecated')
+                                  AND iv.VALUE_EXTERNAL_ID = P.ID_IMDB ) ) )
+        /* GUARD 2: a TMDb date that contradicts Wikidata disqualifies the QID. */
+        AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT sb
+                         INNER JOIN T_WC_WIKIDATA_TIME_VALUE tb ON tb.ID_STATEMENT = sb.ID_STATEMENT
+                         WHERE P.BIRTHDAY IS NOT NULL
+                           AND sb.ID_WIKIDATA = P.ID_WIKIDATA AND sb.ID_PROPERTY = 'P569'
+                           AND (sb.`RANK` IS NULL OR sb.`RANK` <> 'deprecated')
+                           AND tb.TIME_PRECISION = 11
+                           AND (tb.YEAR_VALUE * 10000 + tb.MONTH_VALUE * 100 + tb.DAY_VALUE)
+                               <> (YEAR(P.BIRTHDAY) * 10000 + MONTH(P.BIRTHDAY) * 100 + DAY(P.BIRTHDAY)) )
+        AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT sd
+                         INNER JOIN T_WC_WIKIDATA_TIME_VALUE td ON td.ID_STATEMENT = sd.ID_STATEMENT
+                         WHERE P.DEATHDAY IS NOT NULL
+                           AND sd.ID_WIKIDATA = P.ID_WIKIDATA AND sd.ID_PROPERTY = 'P570'
+                           AND (sd.`RANK` IS NULL OR sd.`RANK` <> 'deprecated')
+                           AND td.TIME_PRECISION = 11
+                           AND (td.YEAR_VALUE * 10000 + td.MONTH_VALUE * 100 + td.DAY_VALUE)
+                               <> (YEAR(P.DEATHDAY) * 10000 + MONTH(P.DEATHDAY) * 100 + DAY(P.DEATHDAY)) )
+    ) e
+  ) g
+) f
+LEFT JOIN T_WC_WIKIDATA_ITEM pl ON pl.ID_WIKIDATA = f.PLACE_QID
+LEFT JOIN T_WC_WIKIDATA_ITEM co ON co.ID_WIKIDATA = f.COUNTRY_QID
+LEFT JOIN T_WC_WIKIDATA_ITEM rg ON rg.ID_WIKIDATA = f.REGION_QID
+WHERE f.DEATH_YMD IS NOT NULL OR f.BIRTH_YMD IS NOT NULL
+   OR f.GENDER_QID IN ('Q6581072', 'Q6581097', 'Q48270') OR f.PLACE_QID IS NOT NULL
+ORDER BY f.POPULARITY DESC, f.ID_PERSON ASC
