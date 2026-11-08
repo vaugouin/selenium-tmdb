@@ -14,12 +14,12 @@ Part of **Agent BBB** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor
 
 ## Where things live (file → role)
 
-See README § Repository layout. Non-obvious points: the notebooks are the only locally-run code, and all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in `.py` modules. The `-movies01` / `-series01` / `-persons01` notebooks are legacy; the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's primary facts (Day of Death, and since 2026-11-02 Birthday, Gender, Place of Birth) from `preprocess/primary-facts-person-fix.sql`, which replaced `deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the fields, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
+See README § Repository layout. Non-obvious points: all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in importable modules. Since 2026-11-07 `selenium-tmdb-wikidata_id.py` and `selenium-tmdb-deathday.py` are verbatim script copies of the unified and primary facts notebooks (code cells copied as is; only the `%store` replacement, the `chdir`, the closing of Chrome and the argparse dispatch of the last cells are added): a change to a notebook cell belongs in its `.py` too, and the other way round. Their `set_store_value` / `get_store_value` read the `%store` database directly, so notebook and script share the cursors. The `-v2.py` copies load the shared helpers from `selenium_tmdb_common.py` (`from selenium_tmdb_common import *`; a module global they change, `LOG_BASENAME`, is set on the module) and keep only the wikidata_id-specific helpers in their own file. They attach Selenium to a real Chrome on a persistent profile (`launch_chrome`, DevTools port, not the default profile, refused since Chrome 136): there `shutdown_browser` closes Chrome through `Browser.close` (the one CDP call, at shutdown only), `login_tmdb` reuses the profile's session before trying credentials, and the end of a run detaches without closing. A fix to the helper cell now has up to four homes: both notebooks, the two v1 scripts, and the library. The single-entity `-movies01` / `-series01` / `-persons01` notebooks were removed on 2026-11-08 (git history); the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's primary facts (Day of Death, and since 2026-11-02 Birthday, Gender, Place of Birth) from `preprocess/primary-facts-person-fix.sql`, which replaced `deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the fields, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
 
 ## Code conventions
 
 - Per-entity differences are data-driven through the `DATASETS` list (six entries: fix and replace per entity, each with its own `store_key`). Extend it rather than branching per entity.
-- Resumable cursors use `%store` (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...); the legacy notebooks share the fill keys. Writing the cursor is half the pair: `get_store_value` must read it back, or every relaunch restarts at the top of the CSV.
+- Resumable cursors use `%store` (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...), shared by the notebooks and the scripts. Writing the cursor is half the pair: `get_store_value` must read it back, or every relaunch restarts at the top of the CSV.
 - DOM interaction uses explicit waits (`WebDriverWait` + `expected_conditions`), never `time.sleep` polling.
 - The browser is disposable: `process_dataset` **returns** the driver it ends with (crashes are recovered by `restart_browser`). Callers must rebind: `driver = process_dataset(driver, dataset)`.
 - Only `is_browser_gone` decides a failure means a dead browser, and only `BrowserSessionLost` marks a lost TMDB session. Keep both narrow: catching `WebDriverException` broadly would restart Chrome over a missing element, and a record skipped for a real reason (locked, 404) must keep advancing the cursor.
@@ -56,8 +56,8 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 
 ---
 
-**Last Updated**: 2026-11-02
-**Current Version**: 1.0.15
+**Last Updated**: 2026-11-08
+**Current Version**: 1.0.16
 
 ## Backlog (Nestor second-brain)
 

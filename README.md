@@ -57,13 +57,13 @@ drive a real Chrome session to apply the fix.
 | Path | Purpose |
 | --- | --- |
 | [selenium-tmdb-wikidata_id.ipynb](selenium-tmdb-wikidata_id.ipynb) | Unified notebook that processes movies, series and persons in one run via a `DATASETS` config block. |
-| [selenium-tmdb-wikidata_id-movies01.ipynb](selenium-tmdb-wikidata_id-movies01.ipynb) | Standalone notebook for movies. |
-| [selenium-tmdb-wikidata_id-series01.ipynb](selenium-tmdb-wikidata_id-series01.ipynb) | Standalone notebook for TV series. |
-| [selenium-tmdb-wikidata_id-persons01.ipynb](selenium-tmdb-wikidata_id-persons01.ipynb) | Standalone notebook for persons. |
+| [selenium-tmdb-deathday.ipynb](selenium-tmdb-deathday.ipynb) | Fills the primary facts of TMDB persons (death and birth dates, gender, place of birth). |
+| [selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py), [selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) | The unified and the primary facts notebooks as terminal scripts (see [The same notebooks as scripts](#the-same-notebooks-as-scripts)). |
+| [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py), [selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py), [selenium_tmdb_common.py](selenium_tmdb_common.py) | The same two scripts on a shared library, driving a real Chrome on a persistent profile (see [v2 scripts](#v2-scripts-shared-library-real-chrome)). |
 | [preprocess/](preprocess/) | Dockerised VPS-side job that produces the CSV input. See its own [README](preprocess/README.md). |
 | [data/](data/) | Downloaded CSVs (git-ignored). |
 | [logs/](logs/) | JSON Lines trace of every wikidata_id write, one file per day (git-ignored). |
-| [doc/](doc/) | Reserved for additional documentation. |
+| [doc/](doc/) | Additional documentation, e.g. [doc/tmdb-login-aws-waf/](doc/tmdb-login-aws-waf/README.md) (login blocked since 2026-11-06). |
 | [archive/](archive/) | SQL tests of closed operations, with their results. |
 | [requirements.txt](requirements.txt) | Python dependencies for the notebooks. |
 | [.env.example](.env.example) | Template for the local `.env` file. |
@@ -222,14 +222,72 @@ three entity types in a single pass:
 7. **Cell 8**: navigates Chrome back to the home page when done.
 8. **Cell 9**: resets the six `%store` cursors to 0.
 
-### Entity-specific notebooks
+### The same notebooks as scripts
 
-`selenium-tmdb-wikidata_id-movies01.ipynb`,
-`selenium-tmdb-wikidata_id-series01.ipynb` and
-`selenium-tmdb-wikidata_id-persons01.ipynb` are older single-entity variants of
-the same workflow, useful when you want to retry one type independently. They
-share the resumable `%store` cursor with the unified notebook (`lngmovieidstart`,
-`lngserieidstart`, `lngpersonidstart`).
+[selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py) and
+[selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) run the two notebooks
+from a terminal, with the same virtual environment. The code cells up to the
+helpers are copied verbatim; the cells that follow are chosen on the command
+line (`--help` lists them):
+
+```bash
+python selenium-tmdb-wikidata_id.py                   # cells 5, 7, 8: the three fill datasets
+python selenium-tmdb-wikidata_id.py --datasets 3 4 5  # the replace datasets
+python selenium-tmdb-wikidata_id.py --diagnostic movie 300115
+python selenium-tmdb-wikidata_id.py --reset-cursors
+
+python selenium-tmdb-deathday.py --dry-run --max-rows 20
+python selenium-tmdb-deathday.py                      # cell 7 as it stands: DRY_RUN off, deathday birthday gender
+python selenium-tmdb-deathday.py --diagnostic 1265047
+python selenium-tmdb-deathday.py --reset-cursor
+```
+
+What differs from Jupyter, and nothing else:
+
+- `%store` does not exist outside IPython, so the scripts read and write the
+  database it uses (`~/.ipython/profile_default/db`, keys `autorestore/<name>`).
+  The cursors are shared: a run stopped in the notebook resumes in the script,
+  and the other way round.
+- The script moves to its own folder first, so `.env`, `data/` and `logs/` are
+  the repository's wherever it is started from.
+- Chrome stays open at the end until you press Enter, as it would after the
+  last cell, then closes.
+
+### v2 scripts: shared library, real Chrome
+
+[selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py) and
+[selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py) take the same
+options as the scripts above. Two things differ:
+
+- **The shared code lives in [selenium_tmdb_common.py](selenium_tmdb_common.py)**:
+  SFTP, the cursor store, Chrome, login, crash recovery, the JSON Lines log.
+  What only the wikidata_id robot uses (`set_wikidata_id`, `process_dataset`,
+  ...) stays in its script.
+- **Chrome is a real one, on a profile that persists.** The script starts
+  Chrome itself, without the automation flag (`navigator.webdriver` is false),
+  on `CHROME_PROFILE_DIR` with the DevTools port `CHROME_DEBUG_PORT`, and
+  Selenium attaches to it. The TMDB session and the declined cookie banner stay
+  in the profile: the first run asks you to log in by hand in that window if the
+  `.env` credentials do not go through (10 minutes), and the next runs, and every
+  crash restart or recycling, find the session open. At the end of a run Chrome
+  stays open, and the next run attaches to it.
+
+It cannot be your everyday Chrome profile: since Chrome 136 the DevTools port is
+refused on the default profile. Your usual Chrome can stay open alongside, it is
+a separate instance. While the robot's profile is open, any local program can
+drive it through the port (127.0.0.1 only). If a run fails with `Chrome does not
+answer on port 9222`, a window is open on that profile without the port: close
+it and run again.
+
+```dotenv
+# Optional, v2 scripts only
+CHROME_DEBUG_PORT=9222
+CHROME_PROFILE_DIR=          # default %LOCALAPPDATA%\selenium-tmdb\chrome-profile
+CHROME_BINARY=               # default: found in Program Files / LOCALAPPDATA
+```
+
+The older single-entity notebooks (`-movies01`, `-series01`, `-persons01`)
+were removed on 2026-11-08; they remain in the git history.
 
 ### Resuming after an interruption
 
@@ -239,9 +297,8 @@ Each iteration writes the last processed ID to the IPython store:
 %store lngmovieidstart    # also lngserieidstart, lngpersonidstart
 ```
 
-Re-running cell 2 of the legacy notebooks loads the cursor with `%store -r`;
-the unified notebook reads it back through `get_store_value`, one key per
-dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...). Either way the
+The unified notebook reads it back through `get_store_value`, one key per
+dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...), and the
 loop skips everything already done.
 
 ### When Chrome crashes
@@ -308,6 +365,54 @@ A CDP purge between records (`Memory.forciblyPurgeJavaScriptMemory`) brought
 the growth down to 4.3 MB per page until Chrome 153. It was removed on
 2026-10-10: since Chrome 154, every navigation after the first purge hangs (see
 Troubleshooting).
+
+### Where the time goes (primary facts robot)
+
+Measured on 2026-11-06 from the timestamps of the
+`logs/selenium-tmdb-deathday-*.log` lines of 2026-11-03 to 2026-11-06, about
+21,000 persons and 28,000 fields saved. Median per person: **7.0 s**.
+
+| Phase | Time | What it is |
+| --- | --- | --- |
+| `PAUSE_BETWEEN_ROWS` | 5.0 s | the deliberate pause after each person, 70% of the run (2 s since 2026-11-08) |
+| open the page and check the fields | about 0.7 s | `open_primary_facts_patiently` and the reads before writing |
+| write, Save, reload, read back | about 1.1 s | includes a second full page load, used only to confirm |
+
+The split between the two TMDb phases rests on the few persons where one field
+was skipped and another saved: an order of magnitude, not an exact figure.
+
+The pause has since come down. The run of 2026-11-08 (v2 script, real Chrome),
+with `PAUSE_BETWEEN_ROWS = 1`, took a median **4.0 s** per person (3.8 to 4.4 s
+for 9 persons in 10, over 1,250 persons), so about 3 s of TMDb work. Philippe
+then set the pause to **2 s** (2026-11-08): expect about 5 s per person.
+
+- **The network.** The work per person outside the pause was 1.3 to 1.6 s up to
+  the morning of 2026-11-04, then 5 to 11 s (up to 36% of persons above 10 s)
+  once NordVPN was on, then a stable 3.5 s. A single TCP connection to
+  themoviedb.org took 94 to 430 ms through the NordVPN exit, against 10 to 20 ms
+  normally. A strong correlation, not a proof: no run was measured with NordVPN
+  off.
+- **The throttle counts persons, not a rate.** Every run got its first 429
+  after 1,530 to 1,630 persons, whether it lasted 3 h or 7 h and wrote 1,880 or
+  2,380 fields. The pause does not buy extra quota, it only delays the 429.
+  Never work around it (a new session to reset the counter): the ceiling is
+  TMDb's.
+
+Ways to go faster, biggest gain first:
+
+1. Lower `PAUSE_BETWEEN_ROWS`: done, 5 s down to 2 s on 2026-11-08 (1 s was
+   tried the same morning). Philippe's call, not a default: the pause is there
+   to be gentle with TMDb, so do not lower it further without asking.
+2. Take the robot's Chrome out of NordVPN (split tunneling on `chrome.exe`, or a
+   faster server): about 2 s per person on the measured days.
+3. Block images and ads in `build_chrome_options`: untested, needs a dry run
+   first, since the Kendo widgets of the edit page must keep working.
+4. Dropping the confirmation reload would save about a third of the work time.
+   Do not: that read-back caught 25 saves that had not taken, and it is what
+   makes a logged `success` true on TMDb.
+
+For an exact split per phase, a `timings` field (open, check, write, save,
+reload) could be added to each `primary_fact_write` event; it has not been.
 
 ---
 
@@ -389,6 +494,18 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   `~/.ssh/config`, and supply the passphrase at the prompt (or via
   `SFTP_KEY_PASSPHRASE`) if the key is protected. Setting `SFTP_PASSWORD` gives
   you the password fallback.
+- **`PermissionError: [WinError 10013]` on the SFTP connection, with NordVPN
+  on** (2026-11-04): NordVPN refuses all local traffic to Tailscale addresses
+  (`100.64.0.0/10`, the range its own Meshnet uses), so the VPS is unreachable
+  over Tailscale although `tailscale ping` answers and the rest of the Internet
+  works. It is not Python: PowerShell fails the same way. To keep NordVPN, in
+  its app: turn **Meshnet** off first, then if needed allow LAN visibility and
+  exclude `tailscaled.exe` (and the venv's `python.exe`) through **split
+  tunneling**. Alternatively point `SFTP_HOST` in `.env` at the VPS's public
+  address: `SFTP_SSHHOSTKEYFINGERPRINT` still guarantees it is the same server,
+  but SSH then crosses the Internet, and a source-IP filter on the VPS could one
+  day refuse a NordVPN exit address. NordVPN also slows TMDb pages down (see
+  [Where the time goes](#where-the-time-goes-primary-facts-robot)).
 - **`FileNotFoundError: No file found matching ...`** — the SFTP download
   returned no files. Check that the preprocess container ran today on the VPS
   (see [preprocess/README.md](preprocess/README.md)) and that `SFTP_FOLDER` is
@@ -397,6 +514,13 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   Chrome session. Solve it manually in the open window; the login waits for the
   browser to leave `/login`, prints a reminder while the challenge is pending
   and carries on as soon as it is solved.
+- **Login never confirmed, no CAPTCHA, manual login works**: since 2026-11-06
+  the `/login` page carries every auth form twice (the page and a hidden copy in
+  the header) plus a signup form with fields of the same names, and pressing
+  Enter in the password field no longer logs in. `login_tmdb()` now fills the
+  *visible* login form (`find_login_fields`) and clicks its own submit button
+  (`submit_login_form`), matched on `type="submit"` because the label follows the
+  account language.
 - **`ReadTimeoutError: HTTPConnectionPool(host='localhost', port=...)`**: Chrome
   or chromedriver died under the loop. The notebook restarts the browser, logs
   back in and retries the record by itself, up to three times, as described in
