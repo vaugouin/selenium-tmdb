@@ -63,7 +63,7 @@ drive a real Chrome session to apply the fix.
 | [preprocess/](preprocess/) | Dockerised VPS-side job that produces the CSV input. See its own [README](preprocess/README.md). |
 | [data/](data/) | Downloaded CSVs (git-ignored). |
 | [logs/](logs/) | JSON Lines trace of every wikidata_id write, one file per day (git-ignored). |
-| [doc/](doc/) | Additional documentation, e.g. [doc/tmdb-login-aws-waf/](doc/tmdb-login-aws-waf/README.md) (login blocked since 2026-11-06). |
+| [doc/](doc/) | Additional documentation. |
 | [archive/](archive/) | SQL tests of closed operations, with their results. |
 | [requirements.txt](requirements.txt) | Python dependencies for the notebooks. |
 | [.env.example](.env.example) | Template for the local `.env` file. |
