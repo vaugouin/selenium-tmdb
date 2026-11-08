@@ -1,12 +1,12 @@
 # selenium-tmdb / preprocess
 
 VPS-side, Dockerised job that produces the CSV input consumed by the Selenium
-notebooks at the repository root. It queries the MariaDB / MySQL database that
+scripts at the repository root. It queries the MariaDB / MySQL database that
 backs the CitizenPhil application, exports the rows that need fixing on TMDB,
 and writes one dated CSV per query (fill and replace, for movies, series and
 persons) into subfolders that are then served over SFTP.
 
-For the overall workflow and the consumer notebooks, see the
+For the overall workflow and the consumer scripts, see the
 [root README](../README.md).
 
 ---
@@ -23,7 +23,7 @@ For the overall workflow and the consumer notebooks, see the
         | docker run                                                   | SFTP (served from $FOLDER_PATH)
         |                                                              v
 +--------------------+                                       +-------------------------+
-| selenium-tmdb.sh   |                                       | Notebooks on workstation |
+| selenium-tmdb.sh   |                                       | Scripts on workstation   |
 | host cron / manual |                                       |  (root of this repo)     |
 +--------------------+                                       +-------------------------+
 ```
@@ -83,7 +83,7 @@ is `NULL`, empty, or does not match the canonical `^Q[0-9]+$` regex. The three
 `-replace` files pick records whose `ID_WIKIDATA` is a valid QID different from
 Wikidata's, and only when the candidate QID names that TMDB record in its TMDb
 ID statement (`P4947` / `P4983` / `P4985`). The queries also surface any TMDB
-record that already holds the target Wikidata ID, so the consumer notebook can
+record that already holds the target Wikidata ID, so the consumer script can
 clear the duplicate before applying the fix; in a `-fix` file such a row is
 exported only when Wikidata names the record to fill and not the holder. The
 reasoning and measurements are in the header comment of each file.
@@ -289,7 +289,7 @@ to three times by `f_sqlupdatearray`.
 1. Drop a new `<name>.sql` next to `selenium-tmdb.py`. The script picks every
    `*.sql` in the folder in alphabetical order.
 2. Make sure the query returns column names that downstream consumers expect
-   (the notebooks at the repo root key on `ID_MOVIE` / `ID_SERIE` /
+   (the scripts at the repo root key on `ID_MOVIE` / `ID_SERIE` /
    `ID_PERSON`, `ID_WIKIDATA`, `ID_*_ERASE_WIKIDATA_ID`).
 3. Rebuild the image (the `Dockerfile` `COPY . /app/` step embeds the SQL
    files into the image) — or just rely on the bind mount and re-run

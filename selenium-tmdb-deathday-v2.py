@@ -689,16 +689,16 @@ def main():
     parser = argparse.ArgumentParser(description='Primary facts into TMDb, in a real Chrome (v2).')
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--diagnostic', nargs='?', type=int, const=1265047, metavar='PERSON_ID',
-                        help='cell 6, read-only: the primary facts fields of one person (default: 1265047)')
+                        help='read-only: the primary facts fields of one person (default: 1265047)')
     action.add_argument('--reset-cursor', action='store_true',
-                        help='cell 9: the next real run starts at the top of the latest export')
+                        help='the next real run starts at the top of the latest export')
     action.add_argument('--debug-login', action='store_true',
-                        help='cells 10 and 11: inspect the login page, then log in and report')
+                        help='inspect the login page, then log in and report')
     parser.add_argument('--dry-run', action='store_true',
-                        help='cell 7 with DRY_RUN = True: pages checked, nothing saved')
-    parser.add_argument('--max-rows', type=int, default=0, help='cell 7 MAX_ROWS: records per run, 0 for no limit (default: 0)')
+                        help='pages checked, nothing saved')
+    parser.add_argument('--max-rows', type=int, default=0, help='records per run, 0 for no limit (default: 0)')
     parser.add_argument('--fields', nargs='+', default=['deathday', 'birthday', 'gender'], metavar='FIELD',
-                        help='cell 7 FILL_FIELDS (default: deathday birthday gender)')
+                        help='fields to fill (default: deathday birthday gender)')
     args = parser.parse_args()
 
     if args.reset_cursor:

@@ -6,8 +6,9 @@ Selenium-driven automation that repairs missing `wikidata_id` external IDs on
 The repair list is computed off-site by the [preprocess/](preprocess/) pipeline,
 which runs inside a Docker container on a VPS, queries the MariaDB database
 that backs the CitizenPhil application, and emits one date-stamped CSV per
-entity type. The notebooks in this repository pull those CSVs over SFTP, then
-drive a real Chrome session to apply the fix.
+entity type. The Python scripts in this repository pull those CSVs over SFTP,
+then drive a real Chrome session to apply the fix. Each one has a `.bat`
+launcher for Windows.
 
 ---
 
@@ -17,7 +18,7 @@ drive a real Chrome session to apply the fix.
 +----------------------------------+        SFTP        +-------------------------------+
 | VPS (Docker container)           |   ------------>    | Local workstation             |
 |                                  |   CSV files        |                               |
-|  preprocess/selenium-tmdb.py     |                    | selenium-tmdb-wikidata_id*.ipynb |
+|  preprocess/selenium-tmdb.py     |                    | selenium-tmdb-*-v2.py         |
 |    -> runs *.sql against MariaDB |                    |   -> downloads CSV via SFTP   |
 |    -> writes one CSV per query   |                    |   -> logs in to TMDB          |
 |       in wikidata-id-*/          |                    |   -> updates wikidata_id      |
@@ -35,10 +36,10 @@ drive a real Chrome session to apply the fix.
    Three more queries find records whose `ID_WIKIDATA` is a valid QID but
    differs from Wikidata's, kept only when that QID names the TMDB record itself
    (`P4947`/`P4983`/`P4985`), and write `wikidata-id-<entity>-replace/wikidata-id-<entity>-replace-YYYYMMDD.csv`.
-2. The notebooks in this repo connect to that VPS over SFTP, mirror the
+2. The scripts in this repo connect to that VPS over SFTP, mirror the
    folders into `./data/`, pick the most recently modified CSV per dataset, and
    iterate through its rows.
-3. For each row the notebook navigates Chrome to the TMDB edit page,
+3. For each row the script navigates Chrome to the TMDB edit page,
    `https://www.themoviedb.org/{movie|tv|person}/{id}/edit?active_nav_item=external_ids`,
    creates the English translation if missing, fills in the `wikidata_id`
    field, and clicks **Save**. If a duplicate Wikidata ID is detected
@@ -47,7 +48,7 @@ drive a real Chrome session to apply the fix.
    (TMDb id property `P4947`/`P4983`/`P4985`); without that proof the QID stays
    where it is, otherwise two duplicate records would trade it on every run.
 4. Records whose `wikidata_id` field is locked are skipped. Progress is
-   persisted via the IPython `%store` magic so the loop can resume where it
+   persisted in the IPython `%store` database so the loop can resume where it
    stopped after a browser crash, manual interrupt, or rate limit.
 
 ---
@@ -56,16 +57,17 @@ drive a real Chrome session to apply the fix.
 
 | Path | Purpose |
 | --- | --- |
-| [selenium-tmdb-wikidata_id.ipynb](selenium-tmdb-wikidata_id.ipynb) | Unified notebook that processes movies, series and persons in one run via a `DATASETS` config block. |
-| [selenium-tmdb-deathday.ipynb](selenium-tmdb-deathday.ipynb) | Fills the primary facts of TMDB persons (death and birth dates, gender, place of birth). |
-| [selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py), [selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) | The unified and the primary facts notebooks as terminal scripts (see [The same notebooks as scripts](#the-same-notebooks-as-scripts)). |
-| [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py), [selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py), [selenium_tmdb_common.py](selenium_tmdb_common.py) | The same two scripts on a shared library, driving a real Chrome on a persistent profile (see [v2 scripts](#v2-scripts-shared-library-real-chrome)). |
+| [selenium-tmdb-wikidata_id.bat](selenium-tmdb-wikidata_id.bat), [selenium-tmdb-deathday.bat](selenium-tmdb-deathday.bat) | Windows launchers of the two v2 scripts, through `uv` (see [Running the scripts](#running-the-scripts)). |
+| [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py) | Writes Wikidata QIDs into the `wikidata_id` of movies, series and persons, through the six `DATASETS` entries. |
+| [selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py) | Fills the primary facts of TMDB persons (death and birth dates, gender, place of birth). |
+| [selenium_tmdb_common.py](selenium_tmdb_common.py) | Code shared by the two v2 scripts: SFTP, cursor store, real Chrome, login, crash recovery, JSON Lines log. |
+| [selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py), [selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) | v1 scripts: the former notebooks copied as they were, with a disposable Chrome (see [v1 scripts](#v1-scripts)). |
 | [preprocess/](preprocess/) | Dockerised VPS-side job that produces the CSV input. See its own [README](preprocess/README.md). |
 | [data/](data/) | Downloaded CSVs (git-ignored). |
 | [logs/](logs/) | JSON Lines trace of every wikidata_id write, one file per day (git-ignored). |
 | [doc/](doc/) | Additional documentation. |
-| [archive/](archive/) | SQL tests of closed operations, with their results. |
-| [requirements.txt](requirements.txt) | Python dependencies for the notebooks. |
+| [archive/](archive/) | SQL tests of closed operations with their results, and the former Jupyter notebooks (archived 2026-11-08). |
+| [requirements.txt](requirements.txt) | Python dependencies of the scripts. |
 | [.env.example](.env.example) | Template for the local `.env` file. |
 
 ---
@@ -75,7 +77,8 @@ drive a real Chrome session to apply the fix.
 - Python 3.10+
 - Google Chrome installed locally (the matching ChromeDriver is fetched
   automatically by `webdriver-manager`).
-- Jupyter / JupyterLab to run the notebooks interactively.
+- [uv](https://docs.astral.sh/uv/), which the `.bat` launchers use (or a plain
+  virtual environment, see below).
 - A TMDB account with edit rights.
 - SFTP access to the VPS that runs the [preprocess/](preprocess/) job.
 
@@ -96,12 +99,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+With uv there is nothing to install by hand: `uv run --with-requirements
+requirements.txt` (what the `.bat` launchers run) uses the `.venv` of the folder
+when it has everything, and otherwise builds the environment from
+`requirements.txt`.
+
 The dependencies are:
 
 - `pandas` — CSV parsing.
 - `python-dotenv` — loads `.env` credentials.
 - `selenium` + `webdriver-manager` — Chrome automation.
 - `paramiko` — SFTP download of the preprocess CSVs.
+- `ipython` — the `%store` database that keeps the resume cursors.
 
 ---
 
@@ -141,16 +150,16 @@ produced by the preprocess job.
 
 ### SFTP authentication
 
-The notebook tries two authentication methods, in this order:
+The scripts try two authentication methods, in this order:
 
 1. **SSH public key** (first choice) — `SFTP_LOGIN` plus a private key. The key
    is looked up in this order: `SFTP_KEY`, then the `IdentityFile` declared for
    `SFTP_HOST` in `~/.ssh/config` (`IdentitiesOnly yes` is honoured, so the
    server is not offered every key on the machine), then the default
    `~/.ssh/id_*` files, then any running SSH agent. If the key is
-   passphrase-protected, the notebook uses `SFTP_KEY_PASSPHRASE` when set and
-   otherwise prompts for it once — keeping the passphrase out of `.env` and out
-   of the notebook output.
+   passphrase-protected, the script uses `SFTP_KEY_PASSPHRASE` when set and
+   otherwise prompts for it once in the terminal — keeping the passphrase out of
+   `.env` and out of the output.
 2. **Password** (second choice) — used only when `SFTP_PASSWORD` is set, and
    only after key authentication has failed.
 
@@ -167,12 +176,12 @@ SHA256:<base64>
 ssh-rsa 2048 aa:bb:…:ff          # MD5
 ```
 
-If `SFTP_SSHHOSTKEYFINGERPRINT` is left empty the notebook prints a warning and
+If `SFTP_SSHHOSTKEYFINGERPRINT` is left empty the script prints a warning and
 falls back to `~/.ssh/known_hosts`.
 
 ### Secrets and Docker
 
-The notebooks at the repo root run locally and read `.env` directly. The
+The scripts at the repo root run locally and read `.env` directly. The
 [preprocess/](preprocess/) job, by contrast, runs in a Docker container on the
 VPS, and its secrets are **never** baked into the image:
 
@@ -187,77 +196,47 @@ See [preprocess/README.md](preprocess/README.md) for the full policy.
 
 ---
 
-## Running the notebooks
+## Running the scripts
 
-Open Jupyter and execute the notebook of your choice:
+Double-click a launcher, or start it from a command prompt to pass options:
 
-```bash
-jupyter lab
+| Launcher | Script | What it does |
+| --- | --- | --- |
+| [selenium-tmdb-wikidata_id.bat](selenium-tmdb-wikidata_id.bat) | `selenium-tmdb-wikidata_id-v2.py` | wikidata_id of movies, series, persons |
+| [selenium-tmdb-deathday.bat](selenium-tmdb-deathday.bat) | `selenium-tmdb-deathday-v2.py` | primary facts of persons |
+
+Each launcher moves to its own folder, wherever the repository sits on the
+machine, runs the script through `uv run --with-requirements requirements.txt`,
+passes on any option given to it, then waits for a key, so the run's output
+stays on screen when it was started by a double-click. The options:
+
+```bat
+selenium-tmdb-wikidata_id.bat                    :: the three fill datasets (movies, series, persons)
+selenium-tmdb-wikidata_id.bat --datasets 3 4 5   :: the three replace datasets
+selenium-tmdb-wikidata_id.bat --diagnostic movie 300115   :: read-only
+selenium-tmdb-wikidata_id.bat --reset-cursors
+
+selenium-tmdb-deathday.bat --dry-run --max-rows 20   :: pages checked, nothing saved
+selenium-tmdb-deathday.bat                           :: real run: deathday birthday gender
+selenium-tmdb-deathday.bat --fields deathday birthday gender place_of_birth
+selenium-tmdb-deathday.bat --diagnostic 1265047      :: read-only
+selenium-tmdb-deathday.bat --reset-cursor
 ```
 
-### Unified notebook — recommended
+`--help` lists them. Without `--dry-run`, the primary facts script writes on
+TMDB. Without a launcher: `uv run --with-requirements requirements.txt python
+selenium-tmdb-deathday-v2.py ...`, or the `.venv`'s `python`.
 
-[selenium-tmdb-wikidata_id.ipynb](selenium-tmdb-wikidata_id.ipynb) ingests all
-three entity types in a single pass:
-
-1. **Cells 1 and 2**: imports and credential check (raises `ValueError` if the
-   `.env` is incomplete). Cell 0 is a commented-out `%pip install paramiko`.
-2. **Cell 3**: defines `DATASETS`, six entries: the fill (`fix`) and the
-   `replace` dataset of each entity, each with its CSV folder name, ID column,
-   TMDB URL fragment, `%store` key, etc.
-3. **Cell 4**: pure-function helpers: `download_new_csv_files`,
-   `get_latest_csv`, `set_wikidata_id`, `clear_wikidata_id`, `process_dataset`,
-   etc.
-4. **Cell 5**: downloads new CSVs for every dataset, then launches Chrome and
-   logs into TMDB, declining the cookie banner on the way (it is anchored over
-   the Save button).
-5. **Cell 6**: read-only diagnostic, `debug_wikidata_page`, which inspects one
-   edit page without writing.
-6. **Cell 7**: runs `process_dataset` for the movie, series, then person fill
-   datasets (`DATASETS[0]` to `[2]`). Each call returns the driver it ends up
-   using and the cell rebinds it (`driver = process_dataset(driver, ...)`),
-   because a crashed Chrome is replaced mid-run by a fresh, logged-in one. The
-   three `replace` datasets (`DATASETS[3]` to `[5]`) are not called by this
-   cell: run them by hand the same way.
-7. **Cell 8**: navigates Chrome back to the home page when done.
-8. **Cell 9**: resets the six `%store` cursors to 0.
-
-### The same notebooks as scripts
-
-[selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py) and
-[selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) run the two notebooks
-from a terminal, with the same virtual environment. The code cells up to the
-helpers are copied verbatim; the cells that follow are chosen on the command
-line (`--help` lists them):
-
-```bash
-python selenium-tmdb-wikidata_id.py                   # cells 5, 7, 8: the three fill datasets
-python selenium-tmdb-wikidata_id.py --datasets 3 4 5  # the replace datasets
-python selenium-tmdb-wikidata_id.py --diagnostic movie 300115
-python selenium-tmdb-wikidata_id.py --reset-cursors
-
-python selenium-tmdb-deathday.py --dry-run --max-rows 20
-python selenium-tmdb-deathday.py                      # cell 7 as it stands: DRY_RUN off, deathday birthday gender
-python selenium-tmdb-deathday.py --diagnostic 1265047
-python selenium-tmdb-deathday.py --reset-cursor
-```
-
-What differs from Jupyter, and nothing else:
-
-- `%store` does not exist outside IPython, so the scripts read and write the
-  database it uses (`~/.ipython/profile_default/db`, keys `autorestore/<name>`).
-  The cursors are shared: a run stopped in the notebook resumes in the script,
-  and the other way round.
-- The script moves to its own folder first, so `.env`, `data/` and `logs/` are
-  the repository's wherever it is started from.
-- Chrome stays open at the end until you press Enter, as it would after the
-  last cell, then closes.
+The resume cursors live in the database of the IPython `%store` magic
+(`~/.ipython/profile_default/db`, keys `autorestore/<name>`), which the scripts
+read and write directly, without Jupyter. They are the cursors the notebooks
+used, so the switch to scripts lost no progress.
 
 ### v2 scripts: shared library, real Chrome
 
 [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py) and
-[selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py) take the same
-options as the scripts above. Two things differ:
+[selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py), the scripts the
+launchers run, differ from the v1 scripts in two ways:
 
 - **The shared code lives in [selenium_tmdb_common.py](selenium_tmdb_common.py)**:
   SFTP, the cursor store, Chrome, login, crash recovery, the JSON Lines log.
@@ -286,20 +265,28 @@ CHROME_PROFILE_DIR=          # default %LOCALAPPDATA%\selenium-tmdb\chrome-profi
 CHROME_BINARY=               # default: found in Program Files / LOCALAPPDATA
 ```
 
-The older single-entity notebooks (`-movies01`, `-series01`, `-persons01`)
-were removed on 2026-11-08; they remain in the git history.
+### v1 scripts
+
+[selenium-tmdb-wikidata_id.py](selenium-tmdb-wikidata_id.py) and
+[selenium-tmdb-deathday.py](selenium-tmdb-deathday.py) are the former notebooks
+copied as they were (same options as v2), each carrying its own copy of the
+helpers, with a disposable Chrome that chromedriver starts on an empty profile
+and logs in again at every start. At the end of a run that Chrome stays open
+until you press Enter.
+
+The Jupyter notebooks they came from, `selenium-tmdb-wikidata_id.ipynb` and
+`selenium-tmdb-deathday.ipynb`, are in [archive/](archive/) since 2026-11-08,
+with the output of their last runs. The single-entity notebooks (`-movies01`,
+`-series01`, `-persons01`) were removed the same day; they remain in the git
+history.
 
 ### Resuming after an interruption
 
-Each iteration writes the last processed ID to the IPython store:
-
-```python
-%store lngmovieidstart    # also lngserieidstart, lngpersonidstart
-```
-
-The unified notebook reads it back through `get_store_value`, one key per
-dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...), and the
-loop skips everything already done.
+Each iteration writes the last processed ID to the `%store` database through
+`set_store_value`, and the next run reads it back through `get_store_value`,
+one key per dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...;
+`primaryfactscursor` for the primary facts, a CSV file name and row): the loop
+skips everything already done.
 
 ### When Chrome crashes
 
@@ -317,7 +304,7 @@ the CSV finding no `wikidata_id` field, writing nothing and advancing the cursor
 past every record it touches. A run on 2026-09-04 did exactly that for ten
 minutes before it was noticed.
 
-The notebook handles both:
+The scripts handle both:
 
 - `get_chrome_error_code()` recognises Chrome's own error page: `document.URL`
   becomes `chrome-error://chromewebdata/` (while `driver.current_url` still
@@ -419,7 +406,7 @@ reload) could be added to each `primary_fact_write` event; it has not been.
 ## CSV schema
 
 Each CSV is `;`-separated with `"`-quoted fields. The columns used by the
-notebooks are:
+scripts are:
 
 | Column | Description |
 | --- | --- |
@@ -437,7 +424,7 @@ produces these rows.
 
 ## Logs
 
-The unified notebook writes one **JSON object per line** (JSON Lines) to a file
+The wikidata_id script writes one **JSON object per line** (JSON Lines) to a file
 per day, `logs/selenium-tmdb-wikidata_id-YYYYMMDD.log`. The folder is created on
 first write and is git-ignored.
 
@@ -522,13 +509,13 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   (`submit_login_form`), matched on `type="submit"` because the label follows the
   account language.
 - **`ReadTimeoutError: HTTPConnectionPool(host='localhost', port=...)`**: Chrome
-  or chromedriver died under the loop. The notebook restarts the browser, logs
+  or chromedriver died under the loop. The script restarts the browser, logs
   back in and retries the record by itself, up to three times, as described in
   [When Chrome crashes](#when-chrome-crashes). If it gives up, the `%store`
   cursor still points at the last record written and re-running the cell resumes
   there.
 - **Chrome shows "Aw, Snap!" / "Aïe aïe aïe" with `Out of Memory`**: the renderer
-  exhausted its memory. Nothing raises in that state, which is why the notebook
+  exhausted its memory. Nothing raises in that state, which is why the script
   recognises the error page itself, restarts Chrome and retries the record. See
   [Keeping Chrome from running out of memory](#keeping-chrome-from-running-out-of-memory)
   for what makes it rarer.

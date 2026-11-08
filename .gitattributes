@@ -35,6 +35,11 @@
 Dockerfile text
 .gitattributes text
 
+# The one exception: Windows batch files keep CRLF. cmd.exe misreads an LF-only
+# .bat (labels, goto and some multi-line commands break), and they never reach
+# the Linux side.
+*.bat   text eol=crlf
+
 # Binary files (never normalized)
 *.png   binary
 *.jpg   binary

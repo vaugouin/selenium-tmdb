@@ -1578,8 +1578,8 @@ def main():
     parser = argparse.ArgumentParser(description='Write Wikidata QIDs into TMDb (selenium-tmdb-wikidata_id.ipynb as a script).')
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--diagnostic', nargs='*', metavar='ARG',
-                        help="cell 6, read-only: ENTITY TMDB_ID (default: movie 300115)")
-    action.add_argument('--reset-cursors', action='store_true', help='cell 9: reset the six cursors to 0')
+                        help="read-only: ENTITY TMDB_ID (default: movie 300115)")
+    action.add_argument('--reset-cursors', action='store_true', help='reset the six cursors to 0')
     parser.add_argument('--datasets', type=int, nargs='+', default=[0, 1, 2], choices=range(len(DATASETS)),
                         metavar='N', help='DATASETS entries to process, in order (default: 0 1 2, the fill datasets; 3 4 5 replace)')
     args = parser.parse_args()

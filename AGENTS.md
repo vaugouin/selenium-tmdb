@@ -14,12 +14,12 @@ Part of **Agent BBB** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor
 
 ## Where things live (file → role)
 
-See README § Repository layout. Non-obvious points: all helpers (`process_dataset`, `set_wikidata_id`, `clear_wikidata_id`, ...) live in notebook cells, not in importable modules. Since 2026-11-07 `selenium-tmdb-wikidata_id.py` and `selenium-tmdb-deathday.py` are verbatim script copies of the unified and primary facts notebooks (code cells copied as is; only the `%store` replacement, the `chdir`, the closing of Chrome and the argparse dispatch of the last cells are added): a change to a notebook cell belongs in its `.py` too, and the other way round. Their `set_store_value` / `get_store_value` read the `%store` database directly, so notebook and script share the cursors. The `-v2.py` copies load the shared helpers from `selenium_tmdb_common.py` (`from selenium_tmdb_common import *`; a module global they change, `LOG_BASENAME`, is set on the module) and keep only the wikidata_id-specific helpers in their own file. They attach Selenium to a real Chrome on a persistent profile (`launch_chrome`, DevTools port, not the default profile, refused since Chrome 136): there `shutdown_browser` closes Chrome through `Browser.close` (the one CDP call, at shutdown only), `login_tmdb` reuses the profile's session before trying credentials, and the end of a run detaches without closing. A fix to the helper cell now has up to four homes: both notebooks, the two v1 scripts, and the library. The single-entity `-movies01` / `-series01` / `-persons01` notebooks were removed on 2026-11-08 (git history); the unified `selenium-tmdb-wikidata_id.ipynb` is the one to edit. `selenium-tmdb-deathday.ipynb` (2026-11-01) fills TMDb's primary facts (Day of Death, and since 2026-11-02 Birthday, Gender, Place of Birth) from `preprocess/primary-facts-person-fix.sql`, which replaced `deathday-person-fix.sql`; it is a separate notebook, not a seventh `DATASETS` entry, because the fields, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Its helper cell is a verbatim copy of cell 4 of the wikidata_id notebook: a fix to one belongs in the other. Only `preprocess/` is dockerised (VPS side); never assume the notebooks run in a container.
+See README § Repository layout. Non-obvious points: the code runs as plain Python scripts started from a terminal, through the `.bat` launchers (`uv run --with-requirements requirements.txt`). The Jupyter notebooks were archived on 2026-11-08 (`archive/*.ipynb`): never edit them, they are no longer kept in sync. `selenium-tmdb-wikidata_id-v2.py` and `selenium-tmdb-deathday-v2.py` are the scripts in use (the launchers run them): they load the shared helpers from `selenium_tmdb_common.py` (`from selenium_tmdb_common import *`; a module global they change, `LOG_BASENAME`, is set on the module) and keep only their own code. They attach Selenium to a real Chrome on a persistent profile (`launch_chrome`, DevTools port, not the default profile, refused since Chrome 136): there `shutdown_browser` closes Chrome through `Browser.close` (the one CDP call, at shutdown only), `login_tmdb` reuses the profile's session before trying credentials, and the end of a run detaches without closing. `selenium-tmdb-wikidata_id.py` and `selenium-tmdb-deathday.py` (v1) are the notebooks as they were, with a disposable Chrome, each carrying its own copy of the helpers. A fix to the shared helpers has three homes: the library and the two v1 scripts. All scripts read and write the `%store` database directly (`set_store_value` / `get_store_value`), the cursors the notebooks used. The primary facts robot (2026-11-01) fills TMDb's Day of Death, Birthday, Gender and Place of Birth from `preprocess/primary-facts-person-fix.sql`, which replaced `deathday-person-fix.sql`; it is a separate script, not a seventh `DATASETS` entry, because the fields, the tab (`primary_facts`) and the cursor (a CSV row, the export being sorted by popularity) all differ. Only `preprocess/` is dockerised (VPS side); never assume the scripts run in a container.
 
 ## Code conventions
 
 - Per-entity differences are data-driven through the `DATASETS` list (six entries: fix and replace per entity, each with its own `store_key`). Extend it rather than branching per entity.
-- Resumable cursors use `%store` (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...), shared by the notebooks and the scripts. Writing the cursor is half the pair: `get_store_value` must read it back, or every relaunch restarts at the top of the CSV.
+- Resumable cursors use `%store` (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...), shared by every script (and by the archived notebooks). Writing the cursor is half the pair: `get_store_value` must read it back, or every relaunch restarts at the top of the CSV.
 - DOM interaction uses explicit waits (`WebDriverWait` + `expected_conditions`), never `time.sleep` polling.
 - The browser is disposable: `process_dataset` **returns** the driver it ends with (crashes are recovered by `restart_browser`). Callers must rebind: `driver = process_dataset(driver, dataset)`.
 - Only `is_browser_gone` decides a failure means a dead browser, and only `BrowserSessionLost` marks a lost TMDB session. Keep both narrow: catching `WebDriverException` broadly would restart Chrome over a missing element, and a record skipped for a real reason (locked, 404) must keep advancing the cursor.
@@ -36,19 +36,19 @@ See README § Repository layout. Non-obvious points: all helpers (`process_datas
 
 Keys and auth: README § Configuration and `.env.example`. Rules:
 
-- Keep the SFTP auth order (key first, password only as fallback). A passphrase comes from `SFTP_KEY_PASSPHRASE` or a `getpass` prompt, never plaintext in the notebook.
+- Keep the SFTP auth order (key first, password only as fallback). A passphrase comes from `SFTP_KEY_PASSPHRASE` or a `getpass` prompt in the terminal, never plaintext in the code.
 - Host verification is pinned to `SFTP_SSHHOSTKEYFINGERPRINT`. A mismatch (`HostKeyVerificationError`) must never be retried with the password nor downgraded to `AutoAddPolicy`; the `known_hosts` branch exists only for an empty fingerprint.
 - A new export needs no wiring: `preprocess/<name>.sql` produces `preprocess/<name>/<name>-YYYYMMDD.csv`.
-- The working tree's root `.env` holds real TMDb and SFTP credentials (git-ignored): never echo it into commits, logs or notebook output, nor move it to a tracked path.
+- The working tree's root `.env` holds real TMDb and SFTP credentials (git-ignored): never echo it into commits, logs or script output, nor move it to a tracked path.
 
 ## Safety
 
-- Every run **modifies live records on a third-party site** (writes, and in conflict cases clears, QIDs on TMDb). Run it deliberately and interactively from Jupyter while watching the browser; never wire it into CI/cron. Respect TMDb's ToS and rate limits.
+- Every run **modifies live records on a third-party site** (writes, and in conflict cases clears, QIDs on TMDb). Run it deliberately, from a terminal (the `.bat` launchers), while watching the browser; never wire it into CI/cron. Respect TMDb's ToS and rate limits.
 - `clear_wikidata_id` is destructive: verify the `ID_*_ERASE_WIKIDATA_ID` rows of a fresh CSV before running.
 - The `*_replace` datasets overwrite valid data: read the CSV and watch the first run of each.
-- The primary facts notebook starts with `DRY_RUN = True` (pages checked, nothing saved). Read a dry run before turning it off, then start with a small `MAX_ROWS`. An empty CSV cell means "leave the field alone", never "clear it"; a field already filled or locked on the live page is skipped alone; every (person, field) a previous real run wrote, found locked or found set is skipped (read back from `logs/selenium-tmdb-deathday-*.log`, old `deathday_write` events included).
+- The primary facts script writes for real unless `--dry-run` is given (pages checked, nothing saved). On a new field or export, read a dry run first, then start with a small `--max-rows`. An empty CSV cell means "leave the field alone", never "clear it"; a field already filled or locked on the live page is skipped alone; every (person, field) a previous real run wrote, found locked or found set is skipped (read back from `logs/selenium-tmdb-deathday-*.log`, old `deathday_write` events included).
 - The export only fills a field when Wikidata points back at the TMDb record (P4985 or P345): a namesake QID would otherwise put a stranger's birthday and birthplace on the page. Keep that guard on every field added later.
-- The daily CSVs write an SQL NULL as the text `NULL` (`f_csv_escape_value` in `preprocess/selenium-tmdb.py`), not as an empty cell: a notebook reading a text column must treat `NULL` as empty, or it writes the word on TMDb (`parse_target`).
+- The daily CSVs write an SQL NULL as the text `NULL` (`f_csv_escape_value` in `preprocess/selenium-tmdb.py`), not as an empty cell: a script reading a text column must treat `NULL` as empty, or it writes the word on TMDb (`parse_target`).
 - TMDb throttles the edit pages: after about 1,500 edits on 2026-11-02 every page answered "Too Many Requests (429)" for hours, which the 1.0.13 robot read as `field_not_found`. `open_primary_facts_patiently` waits (`THROTTLE_WAITS`), never counts a 429 as a skip, and stops the run with the cursor stored.
 - Moderator-**locked** fields are skipped on purpose; never add code to force them.
 - Crash recovery (bounded by `BROWSER_RESTART_ATTEMPTS`) does not make the run unattended: a CAPTCHA needs a human, and each restart replays the current record live.
@@ -57,7 +57,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 ---
 
 **Last Updated**: 2026-11-08
-**Current Version**: 1.0.16
+**Current Version**: 1.0.17
 
 ## Backlog (Nestor second-brain)
 
@@ -74,13 +74,13 @@ Every table of `vaugouindb` is `utf8mb4_unicode_ci`, so column against column is
 - **Guard 3** (replace): the candidate QID must itself name *that* TMDb record in `P4947`/`P4983`/`P4985`; an IMDb match alone is enough to fill, not to contradict.
 - **Guard 4** (fill, 2026-10-10): a fill row that would clear another record (`ID_*_ERASE_WIKIDATA_ID`) is exported only when the QID names this record **and does not also name the holder**; otherwise the QID stays put. Without it, TMDb duplicates traded the QID on every run.
 
-Measurements and reasoning are in the header comments of the `preprocess/*.sql` files. When hunting such loops in the logs, group changed writes by `tmdb_id` and look for alternating `set` / `clear` across days. TMDb seems to silently refuse a QID another record holds, while the notebook still logs `success` (it checks the input box, not the saved value).
+Measurements and reasoning are in the header comments of the `preprocess/*.sql` files. When hunting such loops in the logs, group changed writes by `tmdb_id` and look for alternating `set` / `clear` across days. TMDb seems to silently refuse a QID another record holds, while the script still logs `success` (it checks the input box, not the saved value).
 
 ## SQL files live at the root, and never in `preprocess/` unless they are meant to run
 
 Philippe's decision (2026-09-02), overriding the stack-wide `doc/sql/` convention for this repo: there is no `doc/sql/` here; do not create one. A non-executed `.sql` (recipe, test) goes at the root, or in `archive/` once used.
 
-**The rule that does not bend is about `preprocess/`.** `preprocess/selenium-tmdb.py` runs `sorted(Path(__file__).resolve().parent.glob("*.sql"))`: every `.sql` next to it is executed each morning, each through a single `cursor.execute()`, and written to `preprocess/<stem>/<stem>-YYYYMMDD.csv` for the notebooks. A wildcard leaves no reference to grep for, so:
+**The rule that does not bend is about `preprocess/`.** `preprocess/selenium-tmdb.py` runs `sorted(Path(__file__).resolve().parent.glob("*.sql"))`: every `.sql` next to it is executed each morning, each through a single `cursor.execute()`, and written to `preprocess/<stem>/<stem>-YYYYMMDD.csv` for the scripts. A wildcard leaves no reference to grep for, so:
 
 - never move a `.sql` out of `preprocess/` (2026-08-20: the glob matched nothing, no CSV, no error);
 - never add a `.sql` there that is not meant to run, nor one chaining several statements (2026-09-02: error 1064 took the real exports down with it).
