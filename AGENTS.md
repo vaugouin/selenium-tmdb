@@ -28,7 +28,8 @@ See README § Repository layout. Non-obvious points: the code runs as plain Pyth
 - Click Save through `click_save_button`, never a bare `.click()`: the OneTrust cookie banner covers it. `login_tmdb` declines the banner once per browser.
 - Match TMDB buttons on their **text**, not icon classes (they differ between pages, and a miss reads silently as "already exists").
 - Every write attempt is traced by `log_wikidata_write` (format: README § Logs). Each early `return False` of `set_wikidata_id` / `clear_wikidata_id` carries its own `trace(outcome, reason)`; a new exit path needs one, and a new reason must join the closed vocabulary rather than be invented in place. `append_log_event` swallows its errors on purpose. Log values go through `log_value` / `log_int` (pandas `numpy.int64` and `NaN` are not JSON).
-- Any new skip path must be genuinely rare: `MAX_CONSECUTIVE_SKIPS` stops the run.
+- Any new skip path must be genuinely rare: `MAX_CONSECUTIVE_SKIPS` ends the attempt (v1: the run).
+- The v2 scripts never exit on an error: `run_until_done` waits (`RETRY_WAITS`, 30 min after a 429) and starts the work again from the stored cursor, with a fresh browser. Work run under it must rebuild everything it needs on each call. Only Ctrl+C and a host key mismatch end the program; keep that list short, and never turn a wait into a workaround of TMDb's limits.
 - Some log/error strings are in French; that is expected.
 - The `primary_facts` tab saves through a background request and keeps the page, so after Save never wait for the page to go stale: it cost the full 15 s timeout on every death date until 1.0.13. `wait_for_save` waits for the page's own non-GET request to answer, then the page is reloaded to read the value back.
 
@@ -49,7 +50,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 - The primary facts script writes for real unless `--dry-run` is given (pages checked, nothing saved). On a new field or export, read a dry run first, then start with a small `--max-rows`. An empty CSV cell means "leave the field alone", never "clear it"; a field already filled or locked on the live page is skipped alone; every (person, field) a previous real run wrote, found locked or found set is skipped (read back from `logs/selenium-tmdb-deathday-*.log`, old `deathday_write` events included).
 - The export only fills a field when Wikidata points back at the TMDb record (P4985 or P345): a namesake QID would otherwise put a stranger's birthday and birthplace on the page. Keep that guard on every field added later.
 - The daily CSVs write an SQL NULL as the text `NULL` (`f_csv_escape_value` in `preprocess/selenium-tmdb.py`), not as an empty cell: a script reading a text column must treat `NULL` as empty, or it writes the word on TMDb (`parse_target`).
-- TMDb throttles the edit pages: after about 1,500 edits on 2026-11-02 every page answered "Too Many Requests (429)" for hours, which the 1.0.13 robot read as `field_not_found`. `open_primary_facts_patiently` waits (`THROTTLE_WAITS`), never counts a 429 as a skip, and stops the run with the cursor stored.
+- TMDb throttles the edit pages: after about 1,500 edits on 2026-11-02 every page answered "Too Many Requests (429)" for hours, which the 1.0.13 robot read as `field_not_found`. `open_primary_facts_patiently` waits (`THROTTLE_WAITS`), never counts a 429 as a skip, and ends the attempt with the cursor stored (v2: `run_until_done` then waits 30 min and resumes).
 - Moderator-**locked** fields are skipped on purpose; never add code to force them.
 - Crash recovery (bounded by `BROWSER_RESTART_ATTEMPTS`) does not make the run unattended: a CAPTCHA needs a human, and each restart replays the current record live.
 - A record without an English translation redirects to `/translate/...`; `create_english_translation` then makes a real write to TMDB.
@@ -57,7 +58,7 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 ---
 
 **Last Updated**: 2026-11-09
-**Current Version**: 1.0.18
+**Current Version**: 1.0.19
 
 ## Backlog (Nestor second-brain)
 

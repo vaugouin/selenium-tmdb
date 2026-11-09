@@ -325,14 +325,39 @@ The scripts handle both:
   redirects to the login form, which raises `BrowserSessionLost` instead of
   counting the record as processed.
 - As a backstop, `MAX_CONSECUTIVE_SKIPS` (8) records in a row writing nothing
-  restarts the browser once, and stops the run if it happens again. Over the 1061
+  restarts the browser once, and ends the attempt if it happens again (v2: the
+  run then waits and starts again, see below). Over the 1061
   records of the run before that incident, 1046 were written and the longest run
   without a write was 1, so the threshold sits far above normal.
 - The client timeout is 60 s and the page load timeout 45 s, so a dead browser is
   noticed in one minute instead of two, and a merely slow page raises an ordinary
   `TimeoutException`.
-- When every attempt fails the run stops, the stored cursor still pointing at the
-  last record actually written, so re-running the cell resumes there.
+- When every attempt fails, the v1 scripts stop, the stored cursor still pointing
+  at the last record actually written, so running them again resumes there.
+
+### The v2 scripts never stop on an error
+
+Since 1.0.19 the v2 scripts run their work under `run_until_done`
+([selenium_tmdb_common.py](selenium_tmdb_common.py)): any error that would have
+ended the run (Chrome lost three times, 8 records in a row writing nothing, the
+SFTP server unreachable, TMDB still answering 429 after `THROTTLE_WAITS`, any
+bug) prints its traceback, logs a `run_error` event, waits, then starts the work
+again: the export is downloaded again (a new day brings a new CSV), the browser is
+replaced by a fresh, logged-in one, and the run resumes from the stored cursor.
+The wikidata_id script does not redo the datasets it already finished.
+
+- Waits: 1, 5, 15, then 30 minutes for every next error (`RETRY_WAITS`); after a
+  429 that would not lift, always 30 minutes (`RETRY_WAIT_THROTTLED`). A run that
+  had kept going 30 minutes before failing starts again from the 1-minute wait.
+  The console prints the time of the next attempt.
+- It is a wait, never a workaround: the run comes back to TMDB on the same
+  account, from the same address, after the pause.
+- Only two things end the program: Ctrl+C, and a wrong SFTP host key
+  (`SFTP_SSHHOSTKEYFINGERPRINT` mismatch), a security failure that no wait repairs.
+  The end of the CSV (or `--max-rows`) ends it normally.
+- A run left alone therefore keeps retrying a lasting fault (a CAPTCHA, an expired
+  TMDB password, a page TMDB changed) every 30 minutes: look at the `run_error`
+  lines when a run seems to stand still.
 
 ### Keeping Chrome from running out of memory
 
@@ -452,7 +477,7 @@ confirmed) gets its line too, which is what makes a run readable afterwards.
 
 | Field | Meaning |
 | --- | --- |
-| `event` | `wikidata_id_write`, or the `dataset_start` / `dataset_end` pair that frames each dataset and carries the row count and the final counters. |
+| `event` | `wikidata_id_write`, or the `dataset_start` / `dataset_end` pair that frames each dataset and carries the row count and the final counters, or `run_error` (v2: an error the run waits out, with `error_type`, `error`, `failure`, `wait_s`, `throttled`). |
 | `action` | `set`, or `clear` when a QID is erased from a conflicting record before the fix. |
 | `outcome` | `success`, `skipped` (TMDB refused the record) or `failed` (the write was attempted and did not stick). |
 | `reason` | `page_load_timeout`, `page_not_found`, `translation_failed`, `field_not_found`, `locked`, `field_not_editable`, `field_write_refused`, `save_not_confirmed`, `session_lost`. Null on success. |
@@ -525,9 +550,9 @@ file, is no longer written. It recorded successes only. Its history stays on dis
 - **`ReadTimeoutError: HTTPConnectionPool(host='localhost', port=...)`**: Chrome
   or chromedriver died under the loop. The script restarts the browser, logs
   back in and retries the record by itself, up to three times, as described in
-  [When Chrome crashes](#when-chrome-crashes). If it gives up, the `%store`
-  cursor still points at the last record written and re-running the cell resumes
-  there.
+  [When Chrome crashes](#when-chrome-crashes). If it gives up, the v2 scripts
+  wait and start again by themselves; the v1 scripts stop, the `%store` cursor
+  still pointing at the last record written, and running them again resumes there.
 - **Chrome shows "Aw, Snap!" / "Aïe aïe aïe" with `Out of Memory`**: the renderer
   exhausted its memory. Nothing raises in that state, which is why the script
   recognises the error page itself, restarts Chrome and retries the record. See
@@ -559,8 +584,9 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   window as they start (`disable_console_quick_edit` in `selenium_tmdb_common.py`);
   the `.bat` launchers cannot, `cmd.exe` puts the console mode back after every
   program it runs. The v1 scripts do not, use Esc there.
-- **Records skipped in bulk, nothing written**: the run stops by itself after 8
-  records in a row write nothing. Check in the browser whether TMDB is showing an
+- **Records skipped in bulk, nothing written**: after 8 records in a row write
+  nothing the run restarts Chrome, then ends the attempt if it happens again (v2:
+  it waits and starts again, v1: it stops). Check in the browser whether TMDB is showing an
   error page, a rate limit or a login form, then resume from the stored cursor.
 - **Save seems to do nothing, or `ElementClickInterceptedException`**: TMDB's
   OneTrust cookie banner is anchored at the bottom of the window, right over the

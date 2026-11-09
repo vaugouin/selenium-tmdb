@@ -62,7 +62,8 @@ from dotenv import dotenv_values
 # - TMDb throttles: after about 1,500 edits on 2026-11-02 every page answered "Too
 #   Many Requests (429)" for hours, which the robot took for 16 missing fields. A
 #   throttled page now pauses the run (THROTTLE_WAITS), is never counted as a skip,
-#   and stops the run with the cursor stored when the waits run out. PAUSE_BETWEEN_ROWS
+#   and hands over to run_until_done when the waits run out (cursor stored, a long
+#   wait, then the run resumes). PAUSE_BETWEEN_ROWS
 #   spaces the records out (read from .env every PAUSE_RELOAD_EVERY, so it can be
 #   changed during a run);
 # - DRY_RUN opens each page, checks it and logs what it would write, and never clicks
@@ -647,8 +648,8 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
             time.sleep(current_pause())
     except TmdbThrottled as exc:
         log_end('throttled')
-        print(f'{exc}. The cursor is stored: run the cell again later to resume.')
-        return driver
+        print(f'{exc}. The cursor is stored: the run waits, then resumes there.')
+        raise
     except BaseException:
         log_end('aborted')
         raise
@@ -739,6 +740,7 @@ def main():
                         help='pages checked, nothing saved')
     parser.add_argument('--max-rows', type=int, default=0, help='records per run, 0 for no limit (default: 0)')
     parser.add_argument('--fields', nargs='+', default=['deathday', 'birthday', 'gender'], metavar='FIELD',
+                        choices=list(PRIMARY_FIELDS),
                         help='fields to fill (default: deathday birthday gender)')
     args = parser.parse_args()
 
@@ -755,13 +757,11 @@ def main():
             debug_login(driver)
             return
 
-        # Cell 5
-        download_new_csv_files(PRIMARY_FACTS_DATASET['remote_folder'], PRIMARY_FACTS_DATASET['local_folder'])
-
-        driver = init_driver()
-        login_tmdb(driver)
-
         if args.diagnostic is not None:
+            # Cell 5
+            download_new_csv_files(PRIMARY_FACTS_DATASET['remote_folder'], PRIMARY_FACTS_DATASET['local_folder'])
+            driver = init_driver()
+            login_tmdb(driver)
             # Cell 6
             # Diagnostic (read-only, no write to TMDB): the primary facts fields of one person.
             debug_primary_facts_page(driver, args.diagnostic)
@@ -771,7 +771,26 @@ def main():
         DRY_RUN = args.dry_run
         MAX_ROWS = args.max_rows
         FILL_FIELDS = list(args.fields)
-        driver = process_primary_facts(driver)
+
+        # Cells 5 and 7 under run_until_done: an error never ends the run. It waits,
+        # then downloads the export again (a new day brings a new CSV), takes a fresh
+        # browser and resumes from the stored cursor.
+        state = {'driver': None, 'attempts': 0}
+
+        def attempt():
+            state['attempts'] += 1
+            download_new_csv_files(PRIMARY_FACTS_DATASET['remote_folder'], PRIMARY_FACTS_DATASET['local_folder'])
+            if state['attempts'] == 1:
+                state['driver'] = init_driver()
+                login_tmdb(state['driver'])
+            else:
+                state['driver'] = replace_browser(state['driver'])
+            state['driver'] = process_primary_facts(state['driver'])
+
+        try:
+            run_until_done(attempt, 'primary facts', throttled_types=(TmdbThrottled,))
+        finally:
+            driver = state['driver']
 
         # Cell 8
         # Loop is finished so we display the home page

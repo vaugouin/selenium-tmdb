@@ -1110,6 +1110,63 @@ def create_english_translation(driver, entity_path, lngid):
     time.sleep(2)
     return open_edit_page(driver, entity_path, lngid)
 
+# ---------------------------------------------------------------------------
+# Never give up: a run waits and starts again after an error instead of exiting.
+#
+# The cursor is stored after every record, so starting the work again resumes
+# where it stopped. The waits grow, then stay at the last value; a TMDb 429 that
+# outlived its own waits (TmdbThrottled) waits RETRY_WAIT_THROTTLED, a wait, never a
+# workaround. A run that had kept going RETRY_RESET_AFTER seconds before failing
+# starts the ladder again from the first wait.
+# Only Ctrl+C and the host key check end the program: a wrong SFTP host key is a
+# security failure that no wait repairs (AGENTS.md, never retried with the password).
+# ---------------------------------------------------------------------------
+RETRY_WAITS = (60, 300, 900, 1800)    # seconds before each new attempt, the last one repeats
+RETRY_WAIT_THROTTLED = 1800           # seconds after a TMDb 429 that would not lift
+RETRY_RESET_AFTER = 1800              # seconds of work after which the ladder starts over
+
+
+def run_until_done(work, label, throttled_types=()):
+    """Call work() until it returns, waiting after each error. Returns what work() returns.
+
+    work is called again from scratch after an error: it must rebuild what it needs
+    (CSV download, browser, login) and resume from the stored cursor.
+    """
+    failures = 0
+    while True:
+        started = time.monotonic()
+        try:
+            return work()
+        except KeyboardInterrupt:
+            raise
+        except (HostKeyVerificationError, paramiko.BadHostKeyException):
+            raise
+        except Exception as exc:
+            if time.monotonic() - started >= RETRY_RESET_AFTER:
+                failures = 0
+            throttled = bool(throttled_types) and isinstance(exc, throttled_types)
+            wait = RETRY_WAIT_THROTTLED if throttled else RETRY_WAITS[min(failures, len(RETRY_WAITS) - 1)]
+            failures += 1
+            import traceback
+            traceback.print_exc()
+            resume_at = datetime.fromtimestamp(time.time() + wait).strftime('%H:%M:%S')
+            print(f'{label}: {type(exc).__name__}: {exc}'.strip())
+            print(f'{label}: error {failures}, waiting {wait} s, new attempt at {resume_at} '
+                  '(Ctrl+C to stop).')
+            append_log_event('run_error', label=label, error_type=type(exc).__name__,
+                             error=str(exc)[:500], failure=failures, wait_s=wait, throttled=throttled)
+            time.sleep(wait)
+
+
+def replace_browser(driver):
+    """A fresh, logged-in browser for a new attempt, whatever state the old one is in."""
+    if driver is None:
+        driver = init_driver()
+        login_tmdb(driver)
+        return driver
+    return restart_browser(driver)
+
+
 def close_browser_when_done(driver):
     """End of a script: leave Chrome open on its profile, as Jupyter would, and stop chromedriver only.
 

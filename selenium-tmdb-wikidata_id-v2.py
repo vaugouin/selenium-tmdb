@@ -642,25 +642,41 @@ def main():
 
     driver = None
     try:
-        # Cell 5
-        if True:
+        if args.diagnostic is not None:
+            # Cell 5
             for dataset in DATASETS:
                 download_new_csv_files(dataset['remote_folder'], dataset['local_folder'])
-
-        driver = init_driver()
-        login_tmdb(driver)
-
-        if args.diagnostic is not None:
+            driver = init_driver()
+            login_tmdb(driver)
             # Cell 6
             entity_path, lngid = args.diagnostic or ['movie', '300115']
             debug_wikidata_page(driver, entity_path, int(lngid))
             return
 
-        # Cell 7, one process_dataset per entry of --datasets
+        # Cells 5 and 7 under run_until_done: an error never ends the run. It waits,
+        # downloads the exports again, takes a fresh browser and resumes the dataset it
+        # was on from its stored cursor; the datasets already finished are not redone.
         # process_dataset returns the driver in use: Chrome is restarted in place when
         # it crashes, and the old session dies with it.
-        for index in args.datasets:
-            driver = process_dataset(driver, DATASETS[index])
+        state = {'driver': None, 'attempts': 0, 'done': 0}
+
+        def attempt():
+            state['attempts'] += 1
+            for dataset in DATASETS:
+                download_new_csv_files(dataset['remote_folder'], dataset['local_folder'])
+            if state['attempts'] == 1:
+                state['driver'] = init_driver()
+                login_tmdb(state['driver'])
+            else:
+                state['driver'] = replace_browser(state['driver'])
+            while state['done'] < len(args.datasets):
+                state['driver'] = process_dataset(state['driver'], DATASETS[args.datasets[state['done']]])
+                state['done'] += 1
+
+        try:
+            run_until_done(attempt, 'wikidata_id')
+        finally:
+            driver = state['driver']
 
         # Cell 8
         # Loop is finished so we display the home page
