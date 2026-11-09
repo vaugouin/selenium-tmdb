@@ -55,6 +55,37 @@ import subprocess
 import urllib.request
 
 # =============================================================================
+# Console: Quick Edit off
+# =============================================================================
+def disable_console_quick_edit():
+    """Turn off Quick Edit in the Windows console the script runs in.
+
+    With Quick Edit on, a click in the window starts a selection, and the script then
+    freezes at its next print until Esc is pressed: a run sat 10 minutes on Vija Vetra
+    that way on 2026-11-09. It cannot be done from the .bat launchers, cmd.exe puts
+    the console mode back after every program it runs; set here, it holds for as long
+    as the script lives. Does nothing outside a Windows console (Windows Terminal has
+    no Quick Edit, a redirected stdin has no console mode).
+    """
+    if os.name != 'nt':
+        return
+    try:
+        import ctypes
+        import ctypes.wintypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-10)          # STD_INPUT_HANDLE
+        mode = ctypes.wintypes.DWORD()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            # clear ENABLE_QUICK_EDIT_MODE (0x40), keep ENABLE_EXTENDED_FLAGS (0x80) so it applies
+            kernel32.SetConsoleMode(handle, (mode.value & ~0x0040) | 0x0080)
+    except Exception:
+        pass
+
+
+disable_console_quick_edit()
+
+
+# =============================================================================
 # Configuration from .env (notebook cell 2)
 # =============================================================================
 load_dotenv(dotenv_path=Path('.env'), override=True)

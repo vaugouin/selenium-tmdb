@@ -56,8 +56,8 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 
 ---
 
-**Last Updated**: 2026-11-08
-**Current Version**: 1.0.17
+**Last Updated**: 2026-11-09
+**Current Version**: 1.0.18
 
 ## Backlog (Nestor second-brain)
 

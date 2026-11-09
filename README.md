@@ -263,6 +263,8 @@ it and run again.
 CHROME_DEBUG_PORT=9222
 CHROME_PROFILE_DIR=          # default %LOCALAPPDATA%\selenium-tmdb\chrome-profile
 CHROME_BINARY=               # default: found in Program Files / LOCALAPPDATA
+# Primary facts robot (v2): pause between persons, read again every 15 minutes
+PAUSE_BETWEEN_ROWS=2
 ```
 
 ### v1 scripts
@@ -371,7 +373,19 @@ was skipped and another saved: an order of magnitude, not an exact figure.
 The pause has since come down. The run of 2026-11-08 (v2 script, real Chrome),
 with `PAUSE_BETWEEN_ROWS = 1`, took a median **4.0 s** per person (3.8 to 4.4 s
 for 9 persons in 10, over 1,250 persons), so about 3 s of TMDb work. Philippe
-then set the pause to **2 s** (2026-11-08): expect about 5 s per person.
+then set the pause to **2 s** (2026-11-08). Measured on 2026-11-09 over 3,430
+persons in two runs: a median **5.3 s** per person (5.0 to 5.5 s for 9 persons in
+10 on the first run, up to 6.8 s towards the end of the second), so about 3.3 s
+of TMDb work on top of the pause.
+
+**Changing the pause during a run.** `PAUSE_BETWEEN_ROWS` is read from `.env`
+(`PAUSE_BETWEEN_ROWS=2`, in seconds, decimals allowed), at the first person and
+then every 15 minutes (`PAUSE_RELOAD_EVERY` = 900 s), so editing the line takes
+effect within 15 minutes, without restarting the script. The console prints the
+pause at start and every change it picks up. A missing key keeps the constant of
+the script (2 s), an invalid value (text, negative) keeps the previous pause with
+a warning. Only that key is read again: credentials and the other settings are
+read once, at start.
 
 - **The network.** The work per person outside the pause was 1.3 to 1.6 s up to
   the morning of 2026-11-04, then 5 to 11 s (up to 36% of persons above 10 s)
@@ -387,8 +401,8 @@ then set the pause to **2 s** (2026-11-08): expect about 5 s per person.
 
 Ways to go faster, biggest gain first:
 
-1. Lower `PAUSE_BETWEEN_ROWS`: done, 5 s down to 2 s on 2026-11-08 (1 s was
-   tried the same morning). Philippe's call, not a default: the pause is there
+1. Lower `PAUSE_BETWEEN_ROWS` (in `.env` since 2026-11-09): done, 5 s down to
+   2 s on 2026-11-08 (1 s was tried the same morning). Philippe's call, not a default: the pause is there
    to be gentle with TMDb, so do not lower it further without asking.
 2. Take the robot's Chrome out of NordVPN (split tunneling on `chrome.exe`, or a
    faster server): about 2 s per person on the measured days.
@@ -537,6 +551,14 @@ file, is no longer written. It recorded successes only. Its history stays on dis
   load strategy did not help, which is how the load event was ruled out. If the
   symptom comes back after a Chrome update, look first for any CDP call made
   between navigations.
+- **The script stops writing, Chrome sits on the last page, no error, no CPU, and
+  the console title starts with `Sélection` / `Select`**: a click in the command
+  prompt window started a Quick Edit selection, and Windows froze the script at its
+  next print (2026-11-09, ten minutes on one record). Press Esc in the window and it
+  resumes where it was. Since 1.0.18 the v2 scripts turn Quick Edit off for their
+  window as they start (`disable_console_quick_edit` in `selenium_tmdb_common.py`);
+  the `.bat` launchers cannot, `cmd.exe` puts the console mode back after every
+  program it runs. The v1 scripts do not, use Esc there.
 - **Records skipped in bulk, nothing written**: the run stops by itself after 8
   records in a row write nothing. Check in the browser whether TMDB is showing an
   error page, a rate limit or a login form, then resume from the stored cursor.

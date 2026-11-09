@@ -26,6 +26,7 @@ os.chdir(Path(__file__).resolve().parent)
 
 import selenium_tmdb_common
 from selenium_tmdb_common import *
+from dotenv import dotenv_values
 
 # =============================================================================
 # Notebook cell 4: primary facts
@@ -62,7 +63,8 @@ from selenium_tmdb_common import *
 #   Many Requests (429)" for hours, which the robot took for 16 missing fields. A
 #   throttled page now pauses the run (THROTTLE_WAITS), is never counted as a skip,
 #   and stops the run with the cursor stored when the waits run out. PAUSE_BETWEEN_ROWS
-#   spaces the records out;
+#   spaces the records out (read from .env every PAUSE_RELOAD_EVERY, so it can be
+#   changed during a run);
 # - DRY_RUN opens each page, checks it and logs what it would write, and never clicks
 #   Save. It is on by default: turn it off only after reading a dry run.
 # ---------------------------------------------------------------------------
@@ -82,8 +84,47 @@ DRY_RUN = False
 MAX_ROWS = 0          # records per run; 0 for no limit
 FILL_FIELDS = ['deathday', 'birthday', 'gender', 'place_of_birth']
 SAVE_RELOAD_TIMEOUT = 15
-PAUSE_BETWEEN_ROWS = 2           # seconds between two persons
+PAUSE_BETWEEN_ROWS = 2           # seconds between two persons; .env PAUSE_BETWEEN_ROWS overrides it
+PAUSE_RELOAD_EVERY = 900         # seconds between two reads of PAUSE_BETWEEN_ROWS in .env
 THROTTLE_WAITS = (60, 300, 900)  # seconds to wait on a 429 page before giving up
+
+_pause_state = {'value': None, 'read_at': None}
+
+
+def current_pause():
+    """PAUSE_BETWEEN_ROWS from .env, read again every PAUSE_RELOAD_EVERY seconds.
+
+    Lets the pause be changed during a run without restarting it. Only that key is
+    read (dotenv_values, os.environ untouched); a missing or invalid value keeps the
+    previous one, or the PAUSE_BETWEEN_ROWS constant at the start.
+    """
+    now = time.monotonic()
+    state = _pause_state
+    if state['read_at'] is not None and now - state['read_at'] < PAUSE_RELOAD_EVERY:
+        return state['value']
+    state['read_at'] = now
+    previous = state['value'] if state['value'] is not None else PAUSE_BETWEEN_ROWS
+    try:
+        raw = (dotenv_values(Path('.env')).get('PAUSE_BETWEEN_ROWS') or '').strip()
+    except Exception as exc:
+        print(f'.env unreadable ({exc}): pause kept at {previous} s.')
+        raw = ''
+    value = previous
+    if raw:
+        try:
+            value = float(raw)
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            print(f'PAUSE_BETWEEN_ROWS={raw!r} in .env is not a number of seconds: pause kept at {previous} s.')
+            value = previous
+    if state['value'] is None:
+        print(f'Pause between persons: {value:g} s (.env read again every {PAUSE_RELOAD_EVERY // 60} min).')
+    elif value != state['value']:
+        print(f'Pause between persons changed in .env: {state["value"]:g} s -> {value:g} s.')
+    state['value'] = value
+    return value
+
 
 PRIMARY_FACTS_URL = 'https://www.themoviedb.org/person/{tmdb_id}/edit?active_nav_item=primary_facts'
 
@@ -603,7 +644,7 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
                 print(f'{processed} records processed: recycling Chrome.')
                 driver = restart_browser(driver)
 
-            time.sleep(PAUSE_BETWEEN_ROWS)
+            time.sleep(current_pause())
     except TmdbThrottled as exc:
         log_end('throttled')
         print(f'{exc}. The cursor is stored: run the cell again later to resume.')
