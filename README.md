@@ -67,6 +67,7 @@ launcher for Windows.
 | Path | Purpose |
 | --- | --- |
 | [selenium-tmdb-wikidata_id.bat](selenium-tmdb-wikidata_id.bat), [selenium-tmdb-deathday.bat](selenium-tmdb-deathday.bat) | Windows launchers of the two v2 scripts, through `uv` (see [Running the scripts](#running-the-scripts)). |
+| [selenium-tmdb.bat](selenium-tmdb.bat) / [selenium-tmdb-v3.py](selenium-tmdb-v3.py) | v3, one script for everything: external_ids tab (wikidata_id, IMDb, TheTVDB, social ids) in one visit per record, then the primary facts of persons (see [v3](#v3-one-script-for-everything)). |
 | [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py) | Writes Wikidata QIDs into the `wikidata_id` of movies, series and persons, through the six `DATASETS` entries. |
 | [selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py) | Fills the primary facts of TMDB persons (death and birth dates, gender, place of birth). |
 | [selenium_tmdb_common.py](selenium_tmdb_common.py) | Code shared by the two v2 scripts: SFTP, cursor store, real Chrome, login, crash recovery, JSON Lines log. |
@@ -240,6 +241,50 @@ The resume cursors live in the database of the IPython `%store` magic
 (`~/.ipython/profile_default/db`, keys `autorestore/<name>`), which the scripts
 read and write directly, without Jupyter. They are the cursors the notebooks
 used, so the switch to scripts lost no progress.
+
+### v3: one script for everything
+
+[selenium-tmdb-v3.py](selenium-tmdb-v3.py), launched by
+[selenium-tmdb.bat](selenium-tmdb.bat) (2026-11-11), does in one run what the two
+v2 scripts did, plus the external ids:
+
+| Phase | Tab | Exports read | Fields |
+| --- | --- | --- | --- |
+| `movie`, `tv`, `person` | `external_ids` | `wikidata-id-<entity>-fix` (and `-replace` with `--replace`), `external-ids-<entity>-fix` | `wikidata_id`, `imdb_id`, `tvdb_id` (series), `facebook_id`, `instagram_id`, `twitter_id`, `tiktok_id` and `youtube_id` (persons) |
+| `primary_facts` | `primary_facts` | `primary-facts-person-fix` | `deathday`, `birthday`, `gender`, `place_of_birth` |
+
+```bat
+selenium-tmdb.bat --dry-run --max-rows 20            :: every phase, pages checked, nothing saved
+selenium-tmdb.bat                                    :: real run, every phase and default field
+selenium-tmdb.bat --phases person --fields facebook_id instagram_id twitter_id
+selenium-tmdb.bat --replace --phases movie --fields wikidata_id   :: overwrites valid QIDs
+selenium-tmdb.bat --diagnostic tv 1399               :: read-only, the external_ids tab
+selenium-tmdb.bat --reset-cursors
+```
+
+- **One visit per record.** The fields a record needs on the `external_ids` tab,
+  from every export, are written together and saved once. After Save the page is
+  opened again and each field read back: only a value read back is a `success`
+  (v2 only checked the input box, which is how QIDs TMDB had silently refused were
+  logged as written).
+- **Fill only.** `wikidata_id` keeps the v2 rules (the clear of a conflicting record
+  first, `--replace` to overwrite a valid QID). Every other field is written only
+  when empty on the live page; a value already there, or a locked field, is left
+  alone.
+- **One resume rule.** A run starts at the top of each export. What a previous real
+  run wrote, or found locked or already set, is read back from every log of every
+  robot (`logs/selenium-tmdb-*.log`) and skipped without opening the page. The
+  cursor (`v3cursor_<entity>`, `primaryfactscursor`) only resumes an interrupted run
+  on the same CSV files and fields.
+- **Never stops on an error** (`run_until_done`, as v2). A folder the VPS has not
+  produced yet is skipped.
+- **`youtube_id` only on request** (`--fields ... youtube_id`): Wikidata P2397 is a
+  channel id (`UC...`); what TMDB expects in that field is not verified yet.
+- **Code.** The v3 loads the two v2 scripts as modules and reuses their engines
+  (`wd`, `pf`); it adds the `external_ids` visit (`set_external_ids`) and the
+  orchestration. Its log lines: `wikidata_id_write` and `primary_fact_write` as
+  before, `external_id_write` for the other fields (same fields as
+  `primary_fact_write`), in `logs/selenium-tmdb-YYYYMMDD.log`.
 
 ### v2 scripts: shared library, real Chrome
 
