@@ -86,6 +86,7 @@ MAX_ROWS = 0          # records per run; 0 for no limit
 FILL_FIELDS = ['deathday', 'birthday', 'gender', 'place_of_birth']
 SAVE_RELOAD_TIMEOUT = 15
 PAUSE_BETWEEN_ROWS = 2           # seconds between two persons; .env PAUSE_BETWEEN_ROWS overrides it
+CURSOR_LEGACY_FIELDS = ['deathday', 'birthday', 'gender']   # fields of a cursor stored without them
 PAUSE_RELOAD_EVERY = 900         # seconds between two reads of PAUSE_BETWEEN_ROWS in .env
 THROTTLE_WAITS = (60, 300, 900)  # seconds to wait on a 429 page before giving up
 
@@ -135,7 +136,7 @@ PRIMARY_FIELDS = {
     'deathday':       {'column': 'DATE_OF_DEATH',  'kind': 'date',   'label': 'Day of Death'},
     'birthday':       {'column': 'DATE_OF_BIRTH',  'kind': 'date',   'label': 'Birthday'},
     'gender':         {'column': 'GENDER',         'kind': 'gender', 'label': 'Gender'},
-    'place_of_birth': {'column': 'PLACE_OF_BIRTH', 'kind': 'text',   'label': 'Place of Birth'},
+    'place_of_birth': {'column': 'PLACE_OF_BIRTH', 'kind': 'place',  'label': 'Place of Birth'},
 }
 GENDER_LABELS = {'0': 'Not specified', '1': 'Female', '2': 'Male', '3': 'Non-binary'}
 
@@ -247,6 +248,70 @@ def is_primary_field_writable(driver, field):
     return is_field_writable(field)
 
 
+PLACE_SEARCH_TIMEOUT = 15   # seconds for TMDb's place search to answer
+
+# Place of Birth is not free text on TMDb: it is a reference to a place of TMDb's own
+# list. The page's Kendo AutoComplete asks /search/remote/place as one types, and
+# picking a suggestion fills the hidden place_of_birth_id; text typed without an id is
+# dropped on Save (every place written before 1.0.20 came back "not confirmed").
+# The robot runs the same search and takes only a suggestion whose name is exactly
+# the export's value. It never uses "Create it..." (id 0), which adds a place to
+# TMDb's list: no exact match leaves the field alone (reason place_not_found).
+PLACE_SEARCH_JS = """
+const el = arguments[0], query = arguments[1], done = arguments[arguments.length - 1];
+const w = window.jQuery && jQuery(el).data('kendoAutoComplete');
+if (!w) { done({error: 'no kendoAutoComplete on #' + el.id}); return; }
+const timer = setTimeout(() => done({error: 'no answer from the place search'}), %d);
+w.dataSource.one('change', () => {
+  clearTimeout(timer);
+  done({items: w.dataSource.view().map(x => ({id: String(x.id), name: x.name}))});
+});
+w.search(query);
+""" % (PLACE_SEARCH_TIMEOUT * 1000)
+
+PLACE_PICK_JS = """
+const el = arguments[0], id = arguments[1], name = arguments[2];
+const w = jQuery(el).data('kendoAutoComplete');
+w.close();
+w.value(name);
+jQuery('#' + el.id + '_id').val(id);
+jQuery('#' + el.id + '_selected').val('');
+return jQuery('#' + el.id + '_id').val() === id;
+"""
+
+
+class PlaceNotFound(Exception):
+    """TMDb's place list has no place named exactly like the export's value."""
+
+
+def find_place(driver, field, value):
+    """The TMDb place named exactly value, as {'id', 'name'}. Read-only (the page's own search).
+
+    Raises PlaceNotFound when TMDb's list has no such place; returns None when the
+    search itself did not answer.
+    """
+    driver.set_script_timeout(PLACE_SEARCH_TIMEOUT + 5)
+    answer = driver.execute_async_script(PLACE_SEARCH_JS, field, value) or {}
+    if answer.get('error'):
+        print(f'{field.get_attribute("id")}: {answer["error"]}.')
+        return None
+    wanted = ' '.join(value.split())
+    matches = [item for item in answer.get('items', [])
+               if item.get('id') not in ('', '0', 'None') and ' '.join((item.get('name') or '').split()) == wanted]
+    if not matches:
+        close_to = [item.get('name') for item in answer.get('items', [])][:3]
+        raise PlaceNotFound(f'no TMDb place named exactly {value!r} (closest: {close_to})')
+    return matches[0]
+
+
+def write_place_field(driver, field, value):
+    """Pick the TMDb place named exactly value. Raises PlaceNotFound when there is none."""
+    place = find_place(driver, field, value)
+    if place is None:
+        return False
+    return bool(driver.execute_script(PLACE_PICK_JS, field, place['id'], place['name']))
+
+
 def write_primary_field(driver, field, key, value):
     """Set one field through its Kendo widget when it has one, by typing otherwise.
 
@@ -285,6 +350,9 @@ def write_primary_field(driver, field, key, value):
                 field, value)
             if not done:
                 print(f'{key}: neither a select nor a Kendo widget, not written.')
+                return False
+        elif kind == 'place':
+            if not write_place_field(driver, field, value):
                 return False
         else:
             field.clear()
@@ -388,7 +456,10 @@ def log_primary_fact_write(context, lngid, key, outcome, reason=None, value=None
 
 
 def already_handled_fields():
-    """(person, field) pairs a previous real run wrote, or found locked or already set."""
+    """(person, field) pairs a previous real run wrote, found locked or already set, or
+    whose place TMDb's list did not have (place_not_found: retrying would only open the
+    same page for the same answer).
+    """
     handled = set()
     for path in LOG_DIR.glob(f'{LOG_BASENAME}-*.log'):
         with path.open(encoding='utf-8') as log_file:
@@ -406,7 +477,7 @@ def already_handled_fields():
                     key = record.get('field')
                 else:
                     continue
-                if record.get('outcome') == 'success' or record.get('reason') in ('locked', 'already_set'):
+                if record.get('outcome') == 'success' or record.get('reason') in ('locked', 'already_set', 'place_not_found'):
                     handled.add((record.get('tmdb_id'), key))
     return handled
 
@@ -414,7 +485,8 @@ def already_handled_fields():
 def set_primary_facts(driver, lngid, targets, context=None):
     """Fill the empty fields of one person. targets maps field key -> value to write.
 
-    Returns 'written' (at least one field confirmed), 'skipped' or 'dry_run'.
+    Returns 'written' (at least one field confirmed), 'skipped', 'no_match' (only
+    places missing from TMDb's list, nothing else attempted) or 'dry_run'.
     Raises BrowserSessionLost when TMDB logged us out, so the caller restarts
     Chrome and retries the row; raises TmdbThrottled when TMDB keeps answering 429.
     """
@@ -481,17 +553,36 @@ def set_primary_facts(driver, lngid, targets, context=None):
     name = (context or {}).get('name')
     if DRY_RUN:
         for key in plan:
-            print(f"DRY RUN person {lngid} {name}: would set {PRIMARY_FIELDS[key]['label']} "
-                  f"{display_value(key, targets[key])}.")
+            label = PRIMARY_FIELDS[key]['label']
+            if PRIMARY_FIELDS[key]['kind'] == 'place':
+                # The search is read-only: a dry run tells which places TMDb has.
+                try:
+                    find_place(driver, plan[key], targets[key])
+                except PlaceNotFound as exc:
+                    print(f'DRY RUN person {lngid} {name}: {exc}. Would leave {label} alone.')
+                    trace(key, 'skipped', 'dry_run')
+                    continue
+            print(f"DRY RUN person {lngid} {name}: would set {label} {display_value(key, targets[key])}.")
             trace(key, 'skipped', 'dry_run')
         return 'dry_run'
 
+    unmatched = []
     for key in list(plan):
-        if not write_primary_field(driver, plan[key], key, targets[key]):
+        try:
+            written_ok = write_primary_field(driver, plan[key], key, targets[key])
+        except PlaceNotFound as exc:
+            print(f'person {lngid} {name}: {exc}. Leaving {PRIMARY_FIELDS[key]["label"]} alone.')
+            trace(key, 'skipped', 'place_not_found')
+            unmatched.append(key)
+            del plan[key]
+            continue
+        if not written_ok:
             trace(key, 'skipped', 'field_write_refused')
             del plan[key]
     if not plan:
-        return 'skipped'
+        # A place missing from TMDb's list says nothing about the browser: the page
+        # loaded and the search answered. It must not feed MAX_CONSECUTIVE_SKIPS.
+        return 'no_match' if unmatched else 'skipped'
 
     any_field = next(iter(plan.values()))
     driver.execute_script(SAVE_TRACKER_JS)
@@ -568,13 +659,24 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
     store_key = dataset['store_key']
     cursor = get_store_value(store_key, {}) or {}
     start_row = cursor.get('row', -1) if cursor.get('csv_file') == latest_csv.name else -1
+    # The cursor remembers the fields of the run that stored it (a cursor stored before
+    # 1.0.20 has none: those runs wrote the three default fields). A run asking for a
+    # field that run did not cover starts at the top, otherwise a field added later
+    # (place_of_birth on 2026-11-11) would resume at the end of a CSV already walked
+    # and write nothing. The fields already handled are still skipped, from the logs.
+    cursor_fields = set(cursor.get('fields') or CURSOR_LEGACY_FIELDS)
+    new_fields = [key for key in FILL_FIELDS if key not in cursor_fields]
+    if start_row >= 0 and new_fields:
+        print(f'The stored cursor (row {start_row}) was left by a run without {new_fields}: '
+              'starting at the top of the export.')
+        start_row = -1
     if DRY_RUN:
         start_row = -1  # a dry run never moves the cursor, so it always starts at the top
     handled = already_handled_fields()
     print(f'DRY_RUN={DRY_RUN} MAX_ROWS={max_rows} FILL_FIELDS={FILL_FIELDS} '
           f'start_row={start_row} fields already handled={len(handled)}')
 
-    counts = {'written': 0, 'skipped': 0, 'dry_run': 0}
+    counts = {'written': 0, 'skipped': 0, 'dry_run': 0, 'no_match': 0}
     processed = consecutive_skips = skip_restarts = 0
     started = time.monotonic()
     base_context = {'dataset': dataset['name'], 'mode': dataset['mode'], 'csv_file': latest_csv.name}
@@ -588,6 +690,7 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
         append_log_event('dataset_end', dataset=dataset['name'], mode=dataset['mode'], entity='person',
                          dry_run=DRY_RUN, csv_file=latest_csv.name, status=status, processed=processed,
                          updated=counts['written'], skipped=counts['skipped'], dry_runs=counts['dry_run'],
+                         no_match=counts['no_match'],
                          duration_s=round(time.monotonic() - started, 1))
 
     try:
@@ -629,7 +732,8 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
                 consecutive_skips += 1
 
             if not DRY_RUN:
-                set_store_value(store_key, {'csv_file': latest_csv.name, 'row': int(index)})
+                set_store_value(store_key, {'csv_file': latest_csv.name, 'row': int(index),
+                                            'fields': list(FILL_FIELDS)})
 
             if consecutive_skips >= MAX_CONSECUTIVE_SKIPS:
                 if skip_restarts:
@@ -655,7 +759,8 @@ def process_primary_facts(driver, dataset=PRIMARY_FACTS_DATASET, max_rows=None):
         raise
 
     log_end('completed')
-    print(f"Done: {counts['written']} written, {counts['skipped']} skipped, {counts['dry_run']} dry run.")
+    print(f"Done: {counts['written']} written, {counts['skipped']} skipped, "
+          f"{counts['no_match']} place not in TMDb's list, {counts['dry_run']} dry run.")
     return driver
 
 

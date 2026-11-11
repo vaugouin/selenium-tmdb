@@ -290,6 +290,24 @@ one key per dataset (`lngmovieidstart`, ..., `lngmoviereplaceidstart`, ...;
 `primaryfactscursor` for the primary facts, a CSV file name and row): the loop
 skips everything already done.
 
+The primary facts cursor also keeps the fields of the run that stored it (since
+1.0.20; an older cursor counts as `deathday birthday gender`). A run asking for a
+field that run did not cover, `--fields place_of_birth` after the dates, starts
+at the top of the export instead of resuming at the end of a CSV already walked,
+where it would write nothing; the fields already written stay skipped, read back
+from the logs.
+
+**Place of Birth is a place of TMDb's list, not free text.** The field is a Kendo
+AutoComplete fed by `/search/remote/place`; choosing a suggestion fills the hidden
+`place_of_birth_id`, and text typed without that id is dropped on Save. Until
+1.0.20 the robot typed the text, so every place came back `save_not_confirmed`.
+It now runs the page's own search (read-only, a dry run does it too) and picks
+the suggestion whose name is exactly the export's value. With no exact match it
+leaves the field alone (`place_not_found`, not retried on later runs) and never
+uses **Create it...**, which would add a place to TMDb's list. On the first dry
+run (2026-11-11) 16 places in 20 matched; the misses were names TMDb writes
+differently ("Katsushika, Tokyo, Japan" for "Katsushika, Japan").
+
 ### When Chrome crashes
 
 Long runs lose the browser in two ways, and they do not look alike.
@@ -480,7 +498,7 @@ confirmed) gets its line too, which is what makes a run readable afterwards.
 | `event` | `wikidata_id_write`, or the `dataset_start` / `dataset_end` pair that frames each dataset and carries the row count and the final counters, or `run_error` (v2: an error the run waits out, with `error_type`, `error`, `failure`, `wait_s`, `throttled`). |
 | `action` | `set`, or `clear` when a QID is erased from a conflicting record before the fix. |
 | `outcome` | `success`, `skipped` (TMDB refused the record) or `failed` (the write was attempted and did not stick). |
-| `reason` | `page_load_timeout`, `page_not_found`, `translation_failed`, `field_not_found`, `locked`, `field_not_editable`, `field_write_refused`, `save_not_confirmed`, `session_lost`. Null on success. |
+| `reason` | `page_load_timeout`, `page_not_found`, `translation_failed`, `field_not_found`, `locked`, `field_not_editable`, `field_write_refused`, `save_not_confirmed`, `session_lost`; for the primary facts also `already_set`, `place_not_found` (no place of that exact name in TMDb's list), `dry_run`. Null on success. |
 | `mode` | `fix` or `replace`, from the `DATASETS` entry. |
 | `previous_wikidata_id` | The value on the page before the field was cleared. On a `replace` run, the only record of what was overwritten. |
 | `changed` | True only when a success actually altered the value. |
