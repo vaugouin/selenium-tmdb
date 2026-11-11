@@ -62,10 +62,15 @@ CitizenPhil stack can observe progress and runtime.
 | [wikidata-id-movie-replace.sql](wikidata-id-movie-replace.sql) | Movies whose TMDB `ID_WIKIDATA` is a valid QID but differs from Wikidata's, exported only when the candidate QID itself names that TMDB record. |
 | [wikidata-id-serie-replace.sql](wikidata-id-serie-replace.sql) | Same for TV series. |
 | [wikidata-id-person-replace.sql](wikidata-id-person-replace.sql) | Same for persons. |
+| [primary-facts-person-fix.sql](primary-facts-person-fix.sql) | Persons whose Day of Death, Birthday, Gender or Place of Birth is empty on TMDB while Wikidata knows it. |
+| [external-ids-person-fix.sql](external-ids-person-fix.sql) | Persons whose Facebook, Instagram, X, TikTok, YouTube or IMDb id is empty on TMDB while Wikidata has one clean value (social ids only on rows tmdb-crawler has read since its 1.0.12). |
+| [external-ids-movie-fix.sql](external-ids-movie-fix.sql) | Same for movies (Facebook, Instagram, X, IMDb). |
+| [external-ids-serie-fix.sql](external-ids-serie-fix.sql) | Same for TV series (Facebook, Instagram, X, IMDb, TheTVDB). |
 | [wikidata-id-movie-fix/](wikidata-id-movie-fix/) | Generated CSVs for movies (git-ignored). |
 | [wikidata-id-serie-fix/](wikidata-id-serie-fix/) | Generated CSVs for series (git-ignored). |
 | [wikidata-id-person-fix/](wikidata-id-person-fix/) | Generated CSVs for persons (git-ignored). |
 | `wikidata-id-*-replace/` | Generated CSVs of the three replace queries. |
+| `primary-facts-person-fix/`, `external-ids-*-fix/` | Generated CSVs of the primary facts and external ids queries. Every `*-fix/` and `*-replace/` folder is git- and docker-ignored. |
 | [on.sh](on.sh) / [off.sh](off.sh) | Enable / disable the launcher: `off.sh` writes the flag file `CRON_OFF`, which makes `selenium-tmdb.sh` exit at once, `on.sh` deletes it. |
 | [requirements.txt](requirements.txt) | Python deps: `pymysql`, `numpy`, `pytz`, `python-dotenv`. |
 | [.env.example](.env.example) | Template for the container's `.env` (DB credentials + timezone). |

@@ -36,6 +36,15 @@ launcher for Windows.
    Three more queries find records whose `ID_WIKIDATA` is a valid QID but
    differs from Wikidata's, kept only when that QID names the TMDB record itself
    (`P4947`/`P4983`/`P4985`), and write `wikidata-id-<entity>-replace/wikidata-id-<entity>-replace-YYYYMMDD.csv`.
+
+   Since 2026-11-11 three more, `external-ids-<entity>-fix.sql`, list the
+   external ids (Facebook, Instagram, X, plus TikTok and YouTube for persons, IMDb,
+   and TheTVDB for series) empty on TMDB while Wikidata has one clean value, the
+   QID proven to be the record. Social ids are proposed only for records
+   `tmdb-crawler` has read since its 1.0.12 (`TIM_EXTERNAL_IDS`): before, the
+   crawler did not keep them, so an empty one meant nothing. First measure, before
+   that crawler had read any record: 11,868 series (11,806 TheTVDB ids, 106 IMDb),
+   137 movies and 469 persons (IMDb ids), 46 to 134 s per query.
 2. The scripts in this repo connect to that VPS over SFTP, mirror the
    folders into `./data/`, pick the most recently modified CSV per dataset, and
    iterate through its rows.

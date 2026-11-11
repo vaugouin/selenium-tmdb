@@ -15,9 +15,9 @@ dist/
 .eggs/
 
 # Local state and generated CSV output (mounted at runtime, not baked in)
-wikidata-id-movie-fix/
-wikidata-id-serie-fix/
-wikidata-id-person-fix/
+# Generated CSV folders, one per preprocess/<name>.sql (fix and replace exports)
+*-fix/
+*-replace/
 *.log
 
 # VCS / editor / OS noise

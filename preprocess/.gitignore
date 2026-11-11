@@ -40,6 +40,6 @@ local_chromadb_topics_en/
 Thumbs.db
 
 citizenphilsecrets.py
-wikidata-id-movie-fix/
-wikidata-id-serie-fix/
-wikidata-id-person-fix/
+# Generated CSV folders, one per preprocess/<name>.sql (fix and replace exports)
+*-fix/
+*-replace/
