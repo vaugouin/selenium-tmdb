@@ -395,7 +395,7 @@ persons; a TMDb contributor reported it on 2026-11-13 and the writing was stoppe
   the division of the time between city and country ("Maribor, Slovenia, Yugoslavia [now
   Slovenia]", "Batumi, Georgian SSR, USSR"), under the same 3-persons rule, never for
   Yugoslavia before 1945-11-29 (banovinas, not republics), minus the forms found wrong on
-  review (`WRONG_FORMS`). List of 2026-11-14: 1,093 persons, 199 replacements, 894 clears, all in the countries of the succession table; the births
+  review (`WRONG_FORMS`). List of 2026-11-14: 1,091 persons, 199 replacements, 892 clears, all in the countries of the succession table; the births
   before a decolonisation (India 1947, Australia 1901...) are not cleared.
 
 ### When Chrome crashes
