@@ -42,7 +42,13 @@ launcher for Windows.
    and TheTVDB for series) empty on TMDB while Wikidata has one clean value, the
    QID proven to be the record. Social ids are proposed only for records
    `tmdb-crawler` has read since its 1.0.12 (`TIM_EXTERNAL_IDS`): before, the
-   crawler did not keep them, so an empty one meant nothing. First measure, before
+   crawler did not keep them, so an empty one meant nothing. A social id also needs
+   evidence on its Wikidata statement, the account's numeric id (`P6552`, `P12546`,
+   `P11705`) or "verified account" (`P1552`), and for movies and series no language
+   other than English (`P407`, a regional account): the first dry run (2026-11-14)
+   proposed a fan Instagram for Matt Damon and a regional Facebook for Pokémon. Measured
+   that day: persons keep 3,361 X ids and 741 Instagram, but only 47 Facebook and 4
+   TikTok, rarely qualified on Wikidata. First measure, before
    that crawler had read any record: 11,868 series (11,806 TheTVDB ids, 106 IMDb),
    137 movies and 469 persons (IMDb ids), 46 to 134 s per query.
 2. The scripts in this repo connect to that VPS over SFTP, mirror the

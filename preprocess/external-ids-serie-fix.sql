@@ -20,6 +20,16 @@ GUARDS
    collation (utf8mb4_unicode_ci), so one handle written in two cases counts once.
 4. IMDb and TheTVDB: empty on TMDb, well-formed, and not already held by
    another TMDb serie (TMDb would point two records at one title).
+5. Official account only (2026-11-14, after the first dry run): a social id is exported only
+   when its Wikidata statement carries evidence, the account's numeric id (P6552 X, P12546
+   Instagram, P11705 Facebook) or "verified account" (P1552 = Q28378282). A bare statement
+   is not enough: the dry run proposed matt_damon_official (Matt Damon has no account),
+   realltomholland on TikTok, PokemonVietnamJapan for Pokemon. Measured on records read by
+   tmdb-crawler: X keeps most of its candidates (persons 3,415 of 3,989), Instagram about a
+   quarter, Facebook and TikTok almost none (persons 40 of 2,570 and 4 of 311): those two are
+   rarely qualified on Wikidata, and an empty cell is better than a fan page.
+   A statement qualified with a language other than English (P407) is a regional account
+   (PAFjp, the Japanese X of Phineas and Ferb) and is not exported either.
 
 The CONVERT(..., CHAR) COLLATE on the TMDb id follows primary-facts-person-fix.sql
 (AGENTS.md, collation): P4985 values may be slugs, a bare numeric comparison fails.
@@ -64,7 +74,15 @@ FROM (
     WHERE s.ID_WIKIDATA = T.ID_WIKIDATA AND s.ID_PROPERTY = 'P2013'
       AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0 AND COALESCE(s.IS_BEST_VALUE, 1) = 1
       AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER q
-                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' ) )
+                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' )
+      AND EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER qe
+                   LEFT JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qv ON qv.ID_STATEMENT_QUALIFIER = qe.ID_STATEMENT_QUALIFIER
+                   WHERE qe.ID_STATEMENT = s.ID_STATEMENT
+                     AND ( qe.ID_QUALIFIER_PROPERTY IN ('P6552', 'P12546', 'P11705')
+                        OR ( qe.ID_QUALIFIER_PROPERTY = 'P1552' AND qv.ID_ITEM = 'Q28378282' ) ) )
+      AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER ql
+                       INNER JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qlv ON qlv.ID_STATEMENT_QUALIFIER = ql.ID_STATEMENT_QUALIFIER
+                       WHERE ql.ID_STATEMENT = s.ID_STATEMENT AND ql.ID_QUALIFIER_PROPERTY = 'P407' AND qlv.ID_ITEM <> 'Q1860' ) )
   END AS FACEBOOK_ID,
   CASE WHEN T.TIM_EXTERNAL_IDS IS NOT NULL AND COALESCE(T.INSTAGRAM_ID, '') = '' THEN
   ( SELECT CASE WHEN COUNT(DISTINCT ev.VALUE_EXTERNAL_ID) = 1 THEN MIN(ev.VALUE_EXTERNAL_ID) END
@@ -73,7 +91,15 @@ FROM (
     WHERE s.ID_WIKIDATA = T.ID_WIKIDATA AND s.ID_PROPERTY = 'P2003'
       AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0 AND COALESCE(s.IS_BEST_VALUE, 1) = 1
       AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER q
-                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' ) )
+                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' )
+      AND EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER qe
+                   LEFT JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qv ON qv.ID_STATEMENT_QUALIFIER = qe.ID_STATEMENT_QUALIFIER
+                   WHERE qe.ID_STATEMENT = s.ID_STATEMENT
+                     AND ( qe.ID_QUALIFIER_PROPERTY IN ('P6552', 'P12546', 'P11705')
+                        OR ( qe.ID_QUALIFIER_PROPERTY = 'P1552' AND qv.ID_ITEM = 'Q28378282' ) ) )
+      AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER ql
+                       INNER JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qlv ON qlv.ID_STATEMENT_QUALIFIER = ql.ID_STATEMENT_QUALIFIER
+                       WHERE ql.ID_STATEMENT = s.ID_STATEMENT AND ql.ID_QUALIFIER_PROPERTY = 'P407' AND qlv.ID_ITEM <> 'Q1860' ) )
   END AS INSTAGRAM_ID,
   CASE WHEN T.TIM_EXTERNAL_IDS IS NOT NULL AND COALESCE(T.TWITTER_ID, '') = '' THEN
   ( SELECT CASE WHEN COUNT(DISTINCT ev.VALUE_EXTERNAL_ID) = 1 THEN MIN(ev.VALUE_EXTERNAL_ID) END
@@ -82,7 +108,15 @@ FROM (
     WHERE s.ID_WIKIDATA = T.ID_WIKIDATA AND s.ID_PROPERTY = 'P2002'
       AND (s.`RANK` IS NULL OR s.`RANK` <> 'deprecated') AND COALESCE(s.DELETED, 0) = 0 AND COALESCE(s.IS_BEST_VALUE, 1) = 1
       AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER q
-                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' ) )
+                       WHERE q.ID_STATEMENT = s.ID_STATEMENT AND q.ID_QUALIFIER_PROPERTY = 'P582' )
+      AND EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER qe
+                   LEFT JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qv ON qv.ID_STATEMENT_QUALIFIER = qe.ID_STATEMENT_QUALIFIER
+                   WHERE qe.ID_STATEMENT = s.ID_STATEMENT
+                     AND ( qe.ID_QUALIFIER_PROPERTY IN ('P6552', 'P12546', 'P11705')
+                        OR ( qe.ID_QUALIFIER_PROPERTY = 'P1552' AND qv.ID_ITEM = 'Q28378282' ) ) )
+      AND NOT EXISTS ( SELECT 1 FROM T_WC_WIKIDATA_STATEMENT_QUALIFIER ql
+                       INNER JOIN T_WC_WIKIDATA_QUALIFIER_ITEM_VALUE qlv ON qlv.ID_STATEMENT_QUALIFIER = ql.ID_STATEMENT_QUALIFIER
+                       WHERE ql.ID_STATEMENT = s.ID_STATEMENT AND ql.ID_QUALIFIER_PROPERTY = 'P407' AND qlv.ID_ITEM <> 'Q1860' ) )
   END AS TWITTER_ID,
   CASE WHEN COALESCE(T.ID_IMDB, '') = '' THEN
   ( SELECT CASE WHEN COUNT(DISTINCT ev.VALUE_EXTERNAL_ID) = 1 THEN MIN(ev.VALUE_EXTERNAL_ID) END
