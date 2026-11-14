@@ -67,6 +67,7 @@ launcher for Windows.
 | Path | Purpose |
 | --- | --- |
 | [selenium-tmdb-wikidata_id.bat](selenium-tmdb-wikidata_id.bat), [selenium-tmdb-deathday.bat](selenium-tmdb-deathday.bat) | Windows launchers of the two v2 scripts, through `uv` (see [Running the scripts](#running-the-scripts)). |
+| [selenium-tmdb-place-correction.bat](selenium-tmdb-place-correction.bat) / [selenium-tmdb-place-correction.py](selenium-tmdb-place-correction.py) | Corrects the Places of Birth written with today's country in November 2026 (see [Place of Birth: the country at the date of birth](#place-of-birth-the-country-at-the-date-of-birth-1022)). |
 | [selenium-tmdb.bat](selenium-tmdb.bat) / [selenium-tmdb-v3.py](selenium-tmdb-v3.py) | v3, one script for everything: external_ids tab (wikidata_id, IMDb, TheTVDB, social ids) in one visit per record, then the primary facts of persons (see [v3](#v3-one-script-for-everything)). |
 | [selenium-tmdb-wikidata_id-v2.py](selenium-tmdb-wikidata_id-v2.py) | Writes Wikidata QIDs into the `wikidata_id` of movies, series and persons, through the six `DATASETS` entries. |
 | [selenium-tmdb-deathday-v2.py](selenium-tmdb-deathday-v2.py) | Fills the primary facts of TMDB persons (death and birth dates, gender, place of birth). |
@@ -361,6 +362,38 @@ leaves the field alone (`place_not_found`, not retried on later runs) and never
 uses **Create it...**, which would add a place to TMDb's list. On the first dry
 run (2026-11-11) 16 places in 20 matched; the misses were names TMDb writes
 differently ("Katsushika, Tokyo, Japan" for "Katsushika, Japan").
+
+### Place of Birth: the country at the date of birth (1.0.22)
+
+TMDb's rule ([People Bible](https://www.themoviedb.org/bible/people), Place of Birth):
+"The place of birth should reflect the names and political divisions used at the time
+of birth", today's name in brackets: `Brno, Czechoslovakia [now Czech Republic]`. From
+2026-11-11 to 11-13 the export wrote today's country (`Brno, Czech Republic`) on 25,210
+persons; a TMDb contributor reported it on 2026-11-13 and the writing was stopped.
+
+- **Writing.** `place_of_birth` is no longer among the v3's default fields: ask for it
+  (`--fields ... place_of_birth`) once a dry run of the new export has been read. The
+  export (`primary-facts-person-fix.sql`, guard 5b) finds the country at the birth in
+  `T_WC_COUNTRY` and `T_WC_COUNTRY_SUCCESSION`, the reference data of
+  [tmdb-person-preprocess](../tmdb-person-preprocess/README.md) (its
+  `migrations/add_defunct_countries.py`, which also reads them back into
+  `COUNTRY_OF_BIRTH_HISTORIC`). Same country: written as before. A defunct country: the
+  historical form, only when that exact text is already the place of 3 persons on TMDb
+  (the database does not know renamed cities, Leningrad). Not known (border moved, no
+  birth date, region of the place not found): nothing. First run, 2026-11-14: 12,295
+  places, 676 of them historical (670 Czechoslovakia).
+- **Correction** of what was written: [selenium-tmdb-place-correction.py](selenium-tmdb-place-correction.py),
+  launcher [selenium-tmdb-place-correction.bat](selenium-tmdb-place-correction.bat).
+  `--build` (read-only) reads the writes from the logs and the same tables (database
+  through the SFTP account's SSH tunnel, `DB_*` of `preprocess/.env`; region of German,
+  Italian and Russian places from Wikidata, `wdt:P131*`) and writes
+  `data/place-of-birth-correction/place-of-birth-correction-YYYYMMDD.csv`. The run
+  replaces a place by its historical form (same 3-persons rule, an exact place of TMDb's
+  list) or clears it (it was empty before the robot), only when the page still shows
+  what the robot wrote and the field is not locked. Log event `place_of_birth_correction`
+  in `logs/selenium-tmdb-place-correction-*.log`. List of 2026-11-14: 1,089 persons, 149
+  replacements, 940 clears, all in the countries of the succession table; the births
+  before a decolonisation (India 1947, Australia 1901...) are not cleared.
 
 ### When Chrome crashes
 

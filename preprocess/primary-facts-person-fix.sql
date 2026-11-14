@@ -33,6 +33,23 @@ GUARDS
    best values (IS_BEST_VALUE), so a historical one does not win: the first test gave
    "Portland, Massachusetts" for Portland, Maine (part of Massachusetts until 1820).
    PLACE_OF_BIRTH_QID is kept in the CSV for review.
+5b. Place of birth, country of the time (2026-11-14). TMDb's rule (People Bible): "the place
+   of birth should reflect the names and political divisions used at the time of birth",
+   today's name in brackets. Until 2026-11-13 this export wrote today's country ("Brno,
+   Czech Republic" for a birth in Czechoslovakia), reported by a TMDb contributor. The
+   country of the time comes from T_WC_COUNTRY (ID_WIKIDATA, DAT_START) and
+   T_WC_COUNTRY_SUCCESSION (tmdb-person-preprocess, migrations/add_defunct_countries.py):
+   - the first succession row of today's country covering the birth date gives it, region
+     rows first (P131 of the place, one to three levels up, region not found: nothing), a
+     row without country means "not known": nothing,
+   - no row: today's country, unless it did not exist yet (DAT_START after the birth),
+   - no birth date: today's country only when its history stays before 1950.
+   Same country: written as before. Another, defunct one: "City, Czechoslovakia [now Czech
+   Republic]", else "City, Czechoslovakia", only when that exact text is already the Place
+   of Birth of 3 persons on TMDb. The database does not know renamed cities ("Saint
+   Petersburg, USSR" would be wrong for Leningrad): a form contributors already use is the
+   guard. Otherwise nothing is written. PLACE_COUNTRY_AT_BIRTH is kept in the CSV for review
+   ('SAME' = a country the tables do not know, '-' = not known).
 6. Deprecated or deleted statements are ignored, as everywhere in this repo.
 
 Dates are compared as YEAR*10000 + MONTH*100 + DAY: DATE_START is not filled for these rows.
@@ -48,10 +65,32 @@ cursor.execute(). One statement only. See AGENTS.md, section "SQL files".
 */
 SELECT x.* FROM (
 SELECT
-f.ID_PERSON AS ID_PERSON,
-f.NAME AS NAME,
-f.ID_WIKIDATA AS ID_WIKIDATA,
-f.IDENTITY AS IDENTITY,
+y.ID_PERSON AS ID_PERSON,
+y.NAME AS NAME,
+y.ID_WIKIDATA AS ID_WIKIDATA,
+y.IDENTITY AS IDENTITY,
+y.DATE_OF_DEATH AS DATE_OF_DEATH,
+y.DATE_OF_BIRTH AS DATE_OF_BIRTH,
+y.GENDER AS GENDER,
+CASE WHEN y.PLACE_TODAY IS NULL THEN NULL
+     /* GUARD 5b: same country at the birth, or a country the tables do not know */
+     WHEN y.AT_BIRTH = 'SAME' OR y.AT_BIRTH = y.COUNTRY_CODE THEN y.PLACE_TODAY
+     /* a defunct country: a form already used on TMDb, today's name in brackets first */
+     WHEN hc.PLACE_NAME_EN IS NOT NULL AND y.PL_LABEL IS NOT NULL THEN
+       CASE WHEN ( SELECT COUNT(*) FROM T_WC_TMDB_PERSON u
+                   WHERE u.PLACE_OF_BIRTH = CONCAT(y.PL_LABEL, ', ', hc.PLACE_NAME_EN, ' [now ', y.COUNTRY_NAME_NOW, ']') ) >= 3
+            THEN CONCAT(y.PL_LABEL, ', ', hc.PLACE_NAME_EN, ' [now ', y.COUNTRY_NAME_NOW, ']')
+            WHEN ( SELECT COUNT(*) FROM T_WC_TMDB_PERSON u
+                   WHERE u.PLACE_OF_BIRTH = CONCAT(y.PL_LABEL, ', ', hc.PLACE_NAME_EN) ) >= 3
+            THEN CONCAT(y.PL_LABEL, ', ', hc.PLACE_NAME_EN) END
+END AS PLACE_OF_BIRTH,
+y.PLACE_QID AS PLACE_OF_BIRTH_QID,
+y.AT_BIRTH AS PLACE_COUNTRY_AT_BIRTH,
+y.POPULARITY AS POPULARITY,
+y.ADULT AS ADULT
+FROM (
+SELECT
+f.ID_PERSON, f.NAME, f.ID_WIKIDATA, f.IDENTITY, f.PLACE_QID, f.POPULARITY, f.ADULT,
 CASE WHEN f.DEATH_YMD IS NOT NULL AND (f.BIRTH_YMD IS NULL OR f.BIRTH_YMD < f.DEATH_YMD)
           AND (f.TMDB_BIRTH_YMD IS NULL OR f.TMDB_BIRTH_YMD < f.DEATH_YMD)
      THEN CONCAT(f.DEATH_YMD DIV 10000, '-', LPAD(f.DEATH_YMD DIV 100 MOD 100, 2, '0'), '-', LPAD(f.DEATH_YMD MOD 100, 2, '0'))
@@ -61,7 +100,7 @@ CASE WHEN f.BIRTH_YMD IS NOT NULL AND (f.DEATH_YMD IS NULL OR f.BIRTH_YMD < f.DE
      THEN CONCAT(f.BIRTH_YMD DIV 10000, '-', LPAD(f.BIRTH_YMD DIV 100 MOD 100, 2, '0'), '-', LPAD(f.BIRTH_YMD MOD 100, 2, '0'))
 END AS DATE_OF_BIRTH,
 CASE f.GENDER_QID WHEN 'Q6581072' THEN 1 WHEN 'Q6581097' THEN 2 WHEN 'Q48270' THEN 3 END AS GENDER,
-/* GUARD 5: no string at all rather than a doubtful one. */
+/* GUARD 5: no string at all rather than a doubtful one. The place as written today. */
 CASE WHEN f.PLACE_QID IS NOT NULL AND pl.LABEL_EN IS NOT NULL AND pl.LABEL_EN <> ''
           AND LEFT(pl.LABEL_EN, 1) COLLATE utf8mb4_bin <> LOWER(LEFT(pl.LABEL_EN, 1)) COLLATE utf8mb4_bin
           AND f.COUNTRY_QID IS NOT NULL AND f.COUNTRY_QID <> f.PLACE_QID
@@ -76,10 +115,37 @@ CASE WHEN f.PLACE_QID IS NOT NULL AND pl.LABEL_EN IS NOT NULL AND pl.LABEL_EN <>
                     CASE f.COUNTRY_QID WHEN 'Q30' THEN 'USA' WHEN 'Q145' THEN 'UK'
                                        WHEN 'Q148' THEN 'China' WHEN 'Q29999' THEN 'Netherlands'
                                        ELSE co.LABEL_EN END)
-END AS PLACE_OF_BIRTH,
-f.PLACE_QID AS PLACE_OF_BIRTH_QID,
-f.POPULARITY AS POPULARITY,
-f.ADULT AS ADULT
+END AS PLACE_TODAY,
+pl.LABEL_EN AS PL_LABEL,
+cc.COUNTRY_CODE AS COUNTRY_CODE,
+COALESCE(cc.PLACE_NAME_EN, co.LABEL_EN) AS COUNTRY_NAME_NOW,
+/* GUARD 5b: the country at the birth. 'SAME' = a country T_WC_COUNTRY does not know,
+   '-' = not known (write nothing). */
+CASE WHEN f.PLACE_QID IS NULL THEN NULL
+     WHEN cc.COUNTRY_CODE IS NULL THEN 'SAME'
+     WHEN COALESCE(f.TMDB_BIRTH_YMD, f.BIRTH_YMD) IS NULL THEN
+       CASE WHEN (cc.DAT_START IS NULL OR cc.DAT_START < '1950-01-01')
+                 AND NOT EXISTS ( SELECT 1 FROM T_WC_COUNTRY_SUCCESSION s0
+                                  WHERE s0.COUNTRY_CODE = cc.COUNTRY_CODE AND COALESCE(s0.DELETED, 0) = 0
+                                    AND s0.DAT_END >= '1950-01-01' )
+            THEN cc.COUNTRY_CODE ELSE '-' END
+     ELSE COALESCE(
+       ( SELECT CASE WHEN sc.REGION_QIDS IS NOT NULL AND COALESCE(f.REGION_CHAIN, '') = '' THEN '-'
+                     ELSE COALESCE(sc.COUNTRY_CODE_AT_BIRTH, '-') END
+         FROM T_WC_COUNTRY_SUCCESSION sc
+         WHERE sc.COUNTRY_CODE = cc.COUNTRY_CODE AND COALESCE(sc.DELETED, 0) = 0
+           AND COALESCE(f.TMDB_BIRTH_YMD, f.BIRTH_YMD)
+               BETWEEN YEAR(sc.DAT_START) * 10000 + MONTH(sc.DAT_START) * 100 + DAY(sc.DAT_START)
+                   AND YEAR(sc.DAT_END) * 10000 + MONTH(sc.DAT_END) * 100 + DAY(sc.DAT_END)
+           AND ( sc.REGION_QIDS IS NULL OR COALESCE(f.REGION_CHAIN, '') = ''
+                 OR CONCAT(',', f.REGION_CHAIN, ',') REGEXP CONCAT(',(', REPLACE(sc.REGION_QIDS, ',', '|'), '),') )
+         ORDER BY sc.DISPLAY_ORDER
+         LIMIT 1 ),
+       CASE WHEN cc.DAT_START IS NULL
+                 OR YEAR(cc.DAT_START) * 10000 + MONTH(cc.DAT_START) * 100 + DAY(cc.DAT_START)
+                    <= COALESCE(f.TMDB_BIRTH_YMD, f.BIRTH_YMD)
+            THEN cc.COUNTRY_CODE ELSE '-' END )
+END AS AT_BIRTH
 FROM (
   SELECT g.*,
   /* State, province or constituent country of the place, one to three P131 levels up
@@ -129,7 +195,38 @@ FROM (
                           WHERE c.ID_WIKIDATA = dv.ID_ITEM AND c.ID_PROPERTY = 'P31'
                             AND cv.ID_ITEM IN ('Q35657', 'Q11828004', 'Q9357527', 'Q5852411', 'Q14192252') ) )
       ORDER BY (a.`RANK` = 'preferred') DESC, a.ID_STATEMENT, b.ID_STATEMENT, d.ID_STATEMENT
-      LIMIT 1 ) ) END AS REGION_QID
+      LIMIT 1 ) ) END AS REGION_QID,
+  /* Every P131 of the place, one to three levels up, for the countries whose succession
+     rows depend on the region (Germany, Italy, Russia): read by GUARD 5b. */
+  CASE WHEN EXISTS ( SELECT 1 FROM T_WC_COUNTRY c1
+                     INNER JOIN T_WC_COUNTRY_SUCCESSION s1 ON s1.COUNTRY_CODE = c1.COUNTRY_CODE
+                     WHERE c1.ID_WIKIDATA = g.COUNTRY_QID AND c1.IS_DEFUNCT = 0 AND s1.REGION_QIDS IS NOT NULL )
+       THEN CONCAT_WS(',',
+         ( SELECT GROUP_CONCAT(av.ID_ITEM)
+           FROM T_WC_WIKIDATA_STATEMENT a
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+           WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+             AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0 ),
+         ( SELECT GROUP_CONCAT(bv.ID_ITEM)
+           FROM T_WC_WIKIDATA_STATEMENT a
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+           INNER JOIN T_WC_WIKIDATA_STATEMENT b ON b.ID_WIKIDATA = av.ID_ITEM AND b.ID_PROPERTY = 'P131'
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE bv ON bv.ID_STATEMENT = b.ID_STATEMENT
+           WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+             AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+             AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0 ),
+         ( SELECT GROUP_CONCAT(dv.ID_ITEM)
+           FROM T_WC_WIKIDATA_STATEMENT a
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE av ON av.ID_STATEMENT = a.ID_STATEMENT
+           INNER JOIN T_WC_WIKIDATA_STATEMENT b ON b.ID_WIKIDATA = av.ID_ITEM AND b.ID_PROPERTY = 'P131'
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE bv ON bv.ID_STATEMENT = b.ID_STATEMENT
+           INNER JOIN T_WC_WIKIDATA_STATEMENT d ON d.ID_WIKIDATA = bv.ID_ITEM AND d.ID_PROPERTY = 'P131'
+           INNER JOIN T_WC_WIKIDATA_ITEM_VALUE dv ON dv.ID_STATEMENT = d.ID_STATEMENT
+           WHERE a.ID_WIKIDATA = g.PLACE_QID AND a.ID_PROPERTY = 'P131'
+             AND (a.`RANK` IS NULL OR a.`RANK` <> 'deprecated') AND COALESCE(a.DELETED, 0) = 0
+             AND (b.`RANK` IS NULL OR b.`RANK` <> 'deprecated') AND COALESCE(b.DELETED, 0) = 0
+             AND (d.`RANK` IS NULL OR d.`RANK` <> 'deprecated') AND COALESCE(d.DELETED, 0) = 0 ) )
+  END AS REGION_CHAIN
   FROM (
     SELECT h.*,
     /* A dissolved country (P576) is history, not an address: "Tokyo City, Empire of Japan". */
@@ -248,6 +345,9 @@ FROM (
 LEFT JOIN T_WC_WIKIDATA_ITEM pl ON pl.ID_WIKIDATA = f.PLACE_QID
 LEFT JOIN T_WC_WIKIDATA_ITEM co ON co.ID_WIKIDATA = f.COUNTRY_QID
 LEFT JOIN T_WC_WIKIDATA_ITEM rg ON rg.ID_WIKIDATA = f.REGION_QID
+LEFT JOIN T_WC_COUNTRY cc ON cc.ID_WIKIDATA = f.COUNTRY_QID AND cc.IS_DEFUNCT = 0
+) y
+LEFT JOIN T_WC_COUNTRY hc ON hc.COUNTRY_CODE = y.AT_BIRTH AND hc.IS_DEFUNCT = 1
 ) x
 WHERE x.DATE_OF_DEATH IS NOT NULL OR x.DATE_OF_BIRTH IS NOT NULL
    OR x.GENDER IS NOT NULL OR x.PLACE_OF_BIRTH IS NOT NULL

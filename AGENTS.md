@@ -32,6 +32,7 @@ See README § Repository layout. Non-obvious points: the code runs as plain Pyth
 - The v2 scripts never exit on an error: `run_until_done` waits (`RETRY_WAITS`, 30 min after a 429) and starts the work again from the stored cursor, with a fresh browser. Work run under it must rebuild everything it needs on each call. Only Ctrl+C and a host key mismatch end the program; keep that list short, and never turn a wait into a workaround of TMDb's limits.
 - Some log/error strings are in French; that is expected.
 - Place of Birth is a reference to TMDb's place list (`place_of_birth_id`), not text: pick an exact match from `/search/remote/place` (`find_place`), never type it, and never use "Create it..." (it adds a place to TMDb's list).
+- Place of Birth names the country **at the date of birth** (TMDb People Bible), today's in brackets: `Brno, Czechoslovakia [now Czech Republic]`. Writing today's country is how 25,210 places were written in November 2026 and had to be corrected (README § Place of Birth: the country at the date of birth). The country of the time comes only from `T_WC_COUNTRY` / `T_WC_COUNTRY_SUCCESSION`, owned by `tmdb-person-preprocess/migrations/add_defunct_countries.py`: a new defunct country or border goes there, never into the SQL or the code. When the rule cannot tell, write nothing. `place_of_birth` stays out of the v3's default fields until Philippe puts it back.
 - The `primary_facts` tab saves through a background request and keeps the page, so after Save never wait for the page to go stale: it cost the full 15 s timeout on every death date until 1.0.13. `wait_for_save` waits for the page's own non-GET request to answer, then the page is reloaded to read the value back.
 
 ## Configuration & secrets
@@ -58,8 +59,8 @@ Keys and auth: README § Configuration and `.env.example`. Rules:
 
 ---
 
-**Last Updated**: 2026-11-11
-**Current Version**: 1.0.21
+**Last Updated**: 2026-11-14
+**Current Version**: 1.0.22
 
 ## Backlog (Nestor second-brain)
 
