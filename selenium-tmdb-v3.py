@@ -61,7 +61,11 @@ MAX_ROWS = 0                      # records per phase and entity; 0 for no limit
 # is a channel id ("UC..."), and what TMDb expects there is not verified yet.
 EXTERNAL_FIELDS = ['wikidata_id', 'imdb_id', 'tvdb_id', 'facebook_id', 'instagram_id',
                    'twitter_id', 'tiktok_id', 'youtube_id']
-DEFAULT_FIELDS = [key for key in EXTERNAL_FIELDS if key != 'youtube_id'] + list(pf.PRIMARY_FIELDS)
+# place_of_birth is left out (2026-11-13): the export wrote the country of today, not the
+# country at the date of birth (Czechoslovakia written Czech Republic, USSR, Yugoslavia,
+# East Germany...), reported by a TMDb contributor. Only on explicit request until fixed.
+DEFAULT_FIELDS = ([key for key in EXTERNAL_FIELDS if key != 'youtube_id']
+                  + [key for key in pf.PRIMARY_FIELDS if key != 'place_of_birth'])
 FILL_FIELDS = list(DEFAULT_FIELDS)
 
 # CSV column of external-ids-<entity>-fix -> field of the external_ids tab.
