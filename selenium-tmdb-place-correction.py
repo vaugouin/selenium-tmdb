@@ -38,6 +38,7 @@ import csv
 import importlib.util
 import json
 import os
+import re
 import socket
 import select
 import threading
@@ -216,6 +217,40 @@ def historical_forms(written, historic_name):
     return list(dict.fromkeys(forms))
 
 
+# Divisions named between the city and the country exist only from these dates: the
+# republics of Yugoslavia (Slovenia, Serbia...) from the Federal People's Republic, 1945-11-29
+# (banovinas before). Earlier births get no division form.
+DIVISIONS_FROM = {'YU': date(1945, 11, 29)}
+# Forms used by 3 TMDb persons and still wrong (reviewed 2026-11-14): Ostrava is in Moravia
+# and Silesia, not Cechy (Bohemia); Kuressaare was Kingissepp from 1952 to 1988, and "SRR".
+WRONG_FORMS = {'Ostrava, Cechy, Austria-Hungary [now Czech Republic]',
+               'Kuressaare, Estonian SRR, USSR [now Estonia]'}
+
+
+def forms_with_division(written, historic_name, current_names, uses):
+    """Forms with the division of the time between the city and the country, already used on
+    TMDb: "Maribor, Slovenia, Yugoslavia [now Slovenia]", "Batumi, Georgian SSR, USSR [now
+    Georgia]", "Mönchengladbach, North Rhine-Westphalia, West Germany". Only one division, and
+    a bracket, when there is one, ending with today's country. Most used first, with a bracket
+    before without (Philippe, 2026-11-14: "OK pour ajouter les formes avec division
+    intermédiaire, en gardant le minimum de 3 usages")."""
+    city = written.split(',')[0].strip()
+    pattern = re.compile(r'^' + re.escape(city) + r', ([^,\[\]]+), ' + re.escape(historic_name)
+                         + r'(?: \[now ([^\]]+)\])?$')
+    found = []
+    for text, count in uses.items():
+        match = pattern.match(text)
+        if not match or count < PLACE_USES_MIN:
+            continue
+        now = match.group(2)
+        if now is not None and not any(now.strip().endswith(name) for name in current_names if name):
+            continue
+        if text in WRONG_FORMS:
+            continue
+        found.append((now is not None, count, text))
+    return [text for _, _, text in sorted(found, reverse=True)]
+
+
 # =============================================================================
 # Step 1: the list (read-only)
 # =============================================================================
@@ -345,8 +380,13 @@ def build_list():
             continue
         new_value = ''
         if verdict == 'wrong' and history.place_name(at_birth):
-            forms = [form for form in historical_forms(write['value'], history.place_name(at_birth))
+            historic_name = history.place_name(at_birth)
+            forms = [form for form in historical_forms(write['value'], historic_name)
                      if uses.get(form, 0) >= PLACE_USES_MIN]
+            divisions_from = DIVISIONS_FROM.get(at_birth)
+            if not forms and (divisions_from is None or (birthday and birthday >= divisions_from)):
+                current_names = {write['value'].split(',')[-1].strip(), history.place_name(code)}
+                forms = forms_with_division(write['value'], historic_name, current_names, uses)
             new_value = forms[0] if forms else ''
         action = 'REPLACE' if new_value else 'CLEAR'
         counts[f'{verdict} -> {action}'] = counts.get(f'{verdict} -> {action}', 0) + 1
