@@ -10,7 +10,7 @@ Rules an agent needs to work on this codebase safely. Overview, layout, setup, c
 
 ## Related repositories (project ecosystem)
 
-Part of **Agent BBB** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor/projets/t2s-backlog/topics/related-repositories.txt`). This repo drives the **themoviedb.org website** through a logged-in Chrome session to **write Wikidata QIDs into TMDb external-ID fields**, which the TMDb API cannot write. It closes the loop opened by the Wikidata crawlers (`wikidata-crawler`, `sparql-crawler`) that fill the shared MariaDB; `tmdb-crawler` processes 23/29/30 then read the QIDs back from TMDb.
+Part of **Cinephile App** (owner `vaugouin`; sibling roster in `%USERPROFILE%/Nestor/projets/t2s-backlog/topics/related-repositories.txt`). This repo drives the **themoviedb.org website** through a logged-in Chrome session to **write Wikidata QIDs into TMDb external-ID fields**, which the TMDb API cannot write. It closes the loop opened by the Wikidata crawlers (`wikidata-crawler`, `sparql-crawler`) that fill the shared MariaDB; `tmdb-crawler` processes 23/29/30 then read the QIDs back from TMDb.
 
 ## Where things live (file → role)
 
